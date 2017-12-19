@@ -4,7 +4,7 @@
   <title><![CDATA[Hampus Blog]]></title>
   <link href="https://back.re/atom.xml" rel="self"/>
   <link href="https://back.re/"/>
-  <updated>2017-12-19T17:48:01+09:00</updated>
+  <updated>2017-12-19T17:49:14+09:00</updated>
   <id>https://back.re/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,305 +12,6 @@
   </author>
   <generator uri="http://www.coderforart.com/">CoderForArt</generator>
 
-  
-  <entry>
-    <title type="html"><![CDATA[Drive Headless Chromium with Python3]]></title>
-    <link href="https://back.re/15136691816848.html"/>
-    <updated>2017-12-19T16:39:41+09:00</updated>
-    <id>https://back.re/15136691816848.html</id>
-    <content type="html"><![CDATA[
-<h1 id="toc_0">Browser Automation</h1>
-
-<p>Before we dive into any code, let’s talk about what a headless browser is and why it’s useful. In short, headless browsers are web browsers without a graphical user interface (GUI) and are usually controlled programmatically or via a command-line interface.  </p>
-
-<p>One of the many use cases for headless browsers is automating usability testing or testing browser interactions. If you’re trying to check how a page may render in a different browser or confirm that page elements are present after a user initiates a certain workflow, using a headless browser can provide a lot of assistance. In addition to this, traditional web-oriented tasks like web scraping can be difficult to do if the content is rendered dynamically (say, via Javascript). Using a headless browser allows easy access to this content because the content is rendered exactly as it would be in a full browser.  </p>
-
-<h1 id="toc_1">Headless Chrome and Python</h1>
-
-<h2 id="toc_2">Going Headless!</h2>
-
-<h3 id="toc_3">Setup</h3>
-
-<p>Before we get started, we need to install Chromium and download the latest ChromeDriver.</p>
-
-<p>Next, let’s make a folder that will contain all of our files:  </p>
-
-<pre><code>mkdir going_headless
-#Now we can move the ChromeDriver into the directory that we just made:
-mv Downloads/chromedriver going_headless/
-</code></pre>
-
-<p>Since we are using Selenium with Python, it’s a good idea to make a Python virtual environment. I use virtualenv, so if you use another virtual environment manager, the commands may be different.  </p>
-
-<pre><code>$ cd going_headless &amp;&amp; virtualenv -p python3 env  
-$ source env/bin/activate
-</code></pre>
-
-<p>The next thing we need to do is install Selenium. If you’re not familiar with Selenium, it’s a suite of tools that allows developers to programmatically drive web browsers. It has language bindings for Java, C#, Ruby, Javascript (Node), and Python. To install the Selenium package for Python, we can run the following:  </p>
-
-<pre><code>pip3 install selenium  
-</code></pre>
-
-<h3 id="toc_4">Example</h3>
-
-<p>Now that we’ve gotten all of that out of the way, let’s get to the fun part. Our goal is to write a script that searches for my name “Hamples” on back.re, and checks that a recent article I wrote about Android security is listed in the results. If you’ve followed the instructions above, you can use the headless version of Chromium with Selenium like so:  </p>
-
-<pre><code>import os  
-from selenium import webdriver  
-from selenium.webdriver.common.keys import Keys  
-from selenium.webdriver.chrome.options import Options`  
-
-`chrome_options = Options()  
-chrome_options.add_argument(&quot;--headless&quot;)  
-chrome_options.binary_location = &#39;/Applications/Google Chromium.app/Contents/MacOS/Google Chromium&#39;`    
-
-`driver = webdriver.Chrome(executable_path=os.path.abspath(“chromedriver&quot;),   chrome_options=chrome_options)  
-driver.get(&quot;https://back.re&quot;)`  
-
-`magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
-if magnifying_glass.is_displayed():  
-  magnifying_glass.click()  
-else:  
-  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
-  menu_button.click()`  
-
-`search_field = driver.find_element_by_id(&quot;site-search&quot;)  
-search_field.clear()  
-search_field.send_keys(&quot;Hamples&quot;)  
-search_field.send_keys(Keys.RETURN)  
-assert &quot;Nothing...&quot; in driver.page_source   driver.close()` 
-</code></pre>
-
-<h3 id="toc_5">Example Explained</h3>
-
-<p>The driver.get function will be used navigate to the specified URL.</p>
-
-<pre><code>driver.get(&quot;https://back.re&quot;)
-</code></pre>
-
-<p>The back.re website is responsive, so we have to handle different conditions. As a result, we check to see if the expected search button is displayed. If it isn’t, we click the menu button to enter our search term.  </p>
-
-<pre><code>magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
-if magnifying_glass.is_displayed():  
-  magnifying_glass.click()  
-else:  
-  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
-  menu_button.click()  
-</code></pre>
-
-<p>Now we clear the search field, search for my name, and send the RETURN key to the drive.  </p>
-
-<pre><code>search_field = driver.find_element_by_id(&quot;site-search&quot;)  
-search_field.clear()  
-search_field.send_keys(&quot;Olabode&quot;)  
-search_field.send_keys(Keys.RETURN)
-</code></pre>
-
-<p>We check to make sure that the blog post title from one of my most recent posts is in the page’s source.  </p>
-
-<pre><code>assert &quot;Nothing...&quot; in driver.page_source
-</code></pre>
-
-<p>And finally, we close the browser.</p>
-
-<p><code>driver.close()</code>.</p>
-
-<h2 id="toc_6">Benchmarks</h2>
-
-<h3 id="toc_7">Head to Headless</h3>
-
-<p>So, it’s cool that we can now control Chrome using Selenium and Python without having to see a browser window, but we are more interested in the performance benefits we talked about earlier. Using the same script above, we profiled the time it took to complete the tasks, peak memory usage, and CPU percentage. We polled CPU and memory usage with psutil and measured the time for task completion using timeit.  </p>
-
-<p>For our small script, there were very small differences in the amount of time taken to complete the task (4.3%), memory usage (.5%), and CPU percentage (5.2%). While the gains in our example were very minimal, these gains would prove to be beneficial in a test suite with dozens of tests.  </p>
-
-<h1 id="toc_8">Resources</h1>
-
-<p>Chrome Links:  </p>
-
-<ul>
-<li><a href="https://www.chromium.org/getting-involved/download-chromium">Chromium</a></li>
-<li><a href="https://sites.google.com/a/chromium.org/chromedriver/downloads">Chrome Drive</a></li>
-<li><a href="https://chromedevtools.github.io/devtools-protocol/">DevTools API</a></li>
-</ul>
-
-<p>Selenium Links:  </p>
-
-<ul>
-<li><a href="https://www.seleniumhq.org/">Selenium HQ</a></li>
-<li><a href="https://selenium-python.readthedocs.io/">Python package</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Sending raw Ethernet packets from a specific interface in C on Linux]]></title>
-    <link href="https://back.re/15136687695430.html"/>
-    <updated>2017-12-19T16:32:49+09:00</updated>
-    <id>https://back.re/15136687695430.html</id>
-    <content type="html"><![CDATA[
-<p>Lately I’ve been writing some code to send packets to a specific MAC address from a specific interface. I’m sure this will come in handy again so here is how it goes:</p>
-
-<h2 id="toc_0"><strong>Includes</strong></h2>
-
-<pre><code class="language-c">    #include &lt;netinet/in.h&gt;
-    #include &lt;sys/socket.h&gt;
-    #include &lt;arpa/inet.h&gt;
-    #include &lt;net/if.h&gt;
-    #include &lt;netinet/ip.h&gt;
-    #include &lt;netinet/udp.h&gt;
-    #include &lt;netinet/ether.h&gt;
-    #include &lt;linux/if_packet.h&gt;
-</code></pre>
-
-<h2 id="toc_1"><strong>Open the raw socket:</strong></h2>
-
-<pre><code class="language-c">    int sockfd;
-    ...
-    /* Open RAW socket to send on */
-    if ((sockfd = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW)) == -1) {
-        perror(&quot;socket&quot;);
-    }
-</code></pre>
-
-<h2 id="toc_2"><strong>Get the index of the interface to send on:</strong></h2>
-
-<pre><code class="language-c">    struct ifreq if_idx;
-    ...
-    memset(&amp;if_idx, 0, sizeof(struct ifreq));
-    strncpy(if_idx.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
-    if (ioctl(sock, SIOCGIFINDEX, &amp;if_idx) &lt; 0)
-        perror(&quot;SIOCGIFINDEX&quot;);  
-</code></pre>
-
-<h2 id="toc_3"><strong>Get the MAC address of the interface to send on:</strong></h2>
-
-<pre><code class="language-c">    struct ifreq if_mac;
-    ...
-    memset(&amp;if_mac, 0, sizeof(struct ifreq));
-    strncpy(if_mac.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
-    if (ioctl(sock, SIOCGIFHWADDR, &amp;if_mac) &lt; 0)
-        perror(&quot;SIOCGIFHWADDR&quot;);
-</code></pre>
-
-<h2 id="toc_4"><strong>Get the IP address of the interface to send on:</strong></h2>
-
-<pre><code class="language-c">    struct ifreq if_ip;
-    ...
-    memset(&amp;if_ip, 0, sizeof(struct ifreq));
-    strncpy(if_ip.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
-    if (ioctl(sock, SIOCGIFADDR, &amp;if_ip) &lt; 0)
-        perror(&quot;SIOCGIFADDR&quot;);
-</code></pre>
-
-<h2 id="toc_5"><strong>Construct the Ethernet header:</strong></h2>
-
-<pre><code class="language-c">    int tx_len = 0;
-    char sendbuf[1024];
-    struct ether_header *eh = (struct ether_header *) sendbuf;
-    ...
-    memset(sendbuf, 0, 1024);
-    /* Ethernet header */
-    eh-&gt;ether_shost[0] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[0];
-    eh-&gt;ether_shost[1] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[1];
-    eh-&gt;ether_shost[2] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[2];
-    eh-&gt;ether_shost[3] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[3];
-    eh-&gt;ether_shost[4] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[4];
-    eh-&gt;ether_shost[5] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[5];
-    eh-&gt;ether_dhost[0] = MY_DEST_MAC0;
-    eh-&gt;ether_dhost[1] = MY_DEST_MAC1;
-    eh-&gt;ether_dhost[2] = MY_DEST_MAC2;
-    eh-&gt;ether_dhost[3] = MY_DEST_MAC3;
-    eh-&gt;ether_dhost[4] = MY_DEST_MAC4;
-    eh-&gt;ether_dhost[5] = MY_DEST_MAC5;
-    eh-&gt;ether_type = htons(ETH_P_IP);
-    tx_len += sizeof(struct ether_header);  
-</code></pre>
-
-<h2 id="toc_6"><strong>Construct the IP header:</strong></h2>
-
-<pre><code class="language-c">    struct iphdr *iph = (struct iphdr *) (sendbuf + sizeof(struct ether_header));
-    ...
-    /* IP Header */
-    iph-&gt;ihl = 5;
-    iph-&gt;version = 4;
-    iph-&gt;tos = 16; // Low delay
-    iph-&gt;id = htons(54321);
-    iph-&gt;ttl = ttl; // hops
-    iph-&gt;protocol = 17; // UDP
-    /* Source IP address, can be spoofed */
-    iph-&gt;saddr = inet_addr(inet_ntoa(((struct sockaddr_in *)&amp;if_ip.ifr_addr)-&gt;sin_addr));
-    // iph-&gt;saddr = inet_addr(&quot;192.168.0.112&quot;);
-    /* Destination IP address */
-    iph-&gt;daddr = inet_addr(&quot;192.168.0.111&quot;);
-    tx_len += sizeof(struct iphdr);  
-</code></pre>
-
-<h2 id="toc_7"><strong>Construct the UDP header:</strong></h2>
-
-<pre><code class="language-c">    struct udphdr *udph = (struct udphdr *) (sendbuf + sizeof(struct iphdr) + sizeof(struct ether_header));
-    ...
-    /* UDP Header */
-    udph-&gt;source = htons(3423);
-    udph-&gt;dest = htons(5342);
-    udph-&gt;check = 0; // skip
-    tx_len += sizeof(struct udphdr);  
-</code></pre>
-
-<h2 id="toc_8"><strong>Fill in UDP payload:</strong></h2>
-
-<pre><code class="language-c">    /* Packet data */
-    sendbuf[tx_len++] = 0xde;
-    sendbuf[tx_len++] = 0xad;
-    sendbuf[tx_len++] = 0xbe;
-    sendbuf[tx_len++] = 0xef;  
-</code></pre>
-
-<h2 id="toc_9"><strong>Fill in remaining header info:</strong></h2>
-
-<pre><code class="language-c">    unsigned short csum(unsigned short *buf, int nwords)
-    {
-        unsigned long sum;
-        for(sum=0; nwords&gt;0; nwords--)
-            sum += *buf++;
-        sum = (sum &gt;&gt; 16) + (sum &amp;0xffff);
-        sum += (sum &gt;&gt; 16);
-        return (unsigned short)(~sum);
-    }
-    ...
-    /* Length of UDP payload and header */
-    udph-&gt;len = htons(tx_len - sizeof(struct ether_header) - sizeof(struct iphdr));
-    /* Length of IP payload and header */
-    iph-&gt;tot_len = htons(tx_len - sizeof(struct ether_header));
-    /* Calculate IP checksum on completed header */
-    iph-&gt;check = csum((unsigned short *)(sendbuf+sizeof(struct ether_header)), sizeof(struct iphdr)/2);  
-</code></pre>
-
-<h2 id="toc_10"><strong>Send the raw Ethernet packet:</strong></h2>
-
-<pre><code class="language-c">    /* Destination address */
-    struct sockaddr_ll socket_address;
-    ...
-    /* Index of the network device */
-    socket_address.sll_ifindex = if_idx.ifr_ifindex;
-    /* Address length*/
-    socket_address.sll_halen = ETH_ALEN;
-    /* Destination MAC */
-    socket_address.sll_addr[0] = MY_DEST_MAC0;
-    socket_address.sll_addr[1] = MY_DEST_MAC1;
-    socket_address.sll_addr[2] = MY_DEST_MAC2;
-    socket_address.sll_addr[3] = MY_DEST_MAC3;
-    socket_address.sll_addr[4] = MY_DEST_MAC4;
-    socket_address.sll_addr[5] = MY_DEST_MAC5;
-    /* Send packet */
-    if (sendto(sock, sendbuf, tx_len, 0, (struct sockaddr*)&amp;socket_address, sizeof(struct sockaddr_ll)) &lt; 0)
-        printf(&quot;Send failed\n&quot;);  
-</code></pre>
-
-<h1 id="toc_11">Code available <a href="https://gist.github.com/itsuwari/ad6c8c963fa5c914ca10ee391a9d5d9b">here</a></h1>
-
-]]></content>
-  </entry>
   
   <entry>
     <title type="html"><![CDATA[Thoughts on the Nintendo Switch]]></title>
@@ -504,6 +205,31 @@ Taken the best features of parallel implementations of quantum chemistry methods
   </entry>
   
   <entry>
+    <title type="html"><![CDATA[Advanced Materials Through AI & Computational Materials Science]]></title>
+    <link href="https://back.re/15136677588220.html"/>
+    <updated>2017-12-19T16:15:58+09:00</updated>
+    <id>https://back.re/15136677588220.html</id>
+    <content type="html"><![CDATA[
+<p>A recent <a href="https://www.nature.com/news/can-artificial-intelligence-create-the-next-wonder-material-1.19850">Nature article</a> examines how materials researchers are using artificial intelligence to make quantum-mechanical calculations in only a few seconds that once took supercomputers hours to complete.  </p>
+
+<p>These computer modeling and machine-learning techniques are generating enormous libraries of materials candidates. Researchers hope that this approach will produce a giant leap in the speed and usefulness of materials discovery. British materials scientist Neil Alford observes, “We are now seeing a real convergence of what experimentalists want and what theorists can deliver.”  </p>
+
+<p>The most promising results so far have been achieved with lithium compounds, used in batteries and other applications..  </p>
+
+<p>The Nature article also argues that “artificial intelligence will help researchers comb through vast numbers of materials to find just the one they need for the application at hand.” The standard process starts with researchers applying machine learning to lab data and computer modeling in order to extract common patterns and predict new materials. Researchers then look for a material with specific properties and pass along their findings to chemists, who try to produce the theoretical material for testing.  </p>
+
+<p>Personally, I think huge opportunities are available from these types of materials databases — the potential is almost limitless. The advances made so far remind me of the robotic discovery efforts at Dow, the advances made by Bristol-Myers Squibb and other pharmaceutical companies, and recent virus discoveries, such as the ones made by Angie Belcher’s group. These discoveries have resulted in everything from catalysts for oxidative coupling of methane to battery electrode materials. These types of efforts are the physical analog to the computational approaches described in these material databases.  </p>
+
+<p>Transforming computer predictions to real-world technologies, however, is difficult. Existing databases include a small fraction of all the known materials and only a few possible ones. Researchers have also learned that data-driven discovery works well for some materials, but not for others. And even when researchers successfully isolate a material with potential, it can take years for chemists to synthesize it in a lab.  </p>
+
+<p>Despite these challenges, researchers remain confident that they will discover many useful materials that could lead to innovations in electronics, robotics, healthcare, and other fields. In my opinion, the key for researchers is to avoid the scattershot approach. If scientists can try everything, how do we decide where to focus our efforts? To focus the research there must still be brains behind the computational or robotic synthesis efforts. We need to ensure that we aren’t trying to boil the ocean.  </p>
+
+<p>I believe that success will require collaboration between different disciplines and groups. For example, people who understand the computational work may not completely understand the physical impact on materials. We must combine those two areas to provide meaningful information that can be used to impact physical materials. Information inside a computer is only useful if we can translate it to the physical world.  </p>
+
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Inevitable Comparison: TCP vs UDP]]></title>
     <link href="https://back.re/15136683515000.html"/>
     <updated>2017-12-19T16:25:51+09:00</updated>
@@ -616,26 +342,300 @@ We use UDP for unimportant, temporal data because there is no consistent mechani
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Advanced Materials Through AI & Computational Materials Science]]></title>
-    <link href="https://back.re/15136677588220.html"/>
-    <updated>2017-12-19T16:15:58+09:00</updated>
-    <id>https://back.re/15136677588220.html</id>
+    <title type="html"><![CDATA[Sending raw Ethernet packets from a specific interface in C on Linux]]></title>
+    <link href="https://back.re/15136687695430.html"/>
+    <updated>2017-12-19T16:32:49+09:00</updated>
+    <id>https://back.re/15136687695430.html</id>
     <content type="html"><![CDATA[
-<p>A recent <a href="https://www.nature.com/news/can-artificial-intelligence-create-the-next-wonder-material-1.19850">Nature article</a> examines how materials researchers are using artificial intelligence to make quantum-mechanical calculations in only a few seconds that once took supercomputers hours to complete.  </p>
+<p>Lately I’ve been writing some code to send packets to a specific MAC address from a specific interface. I’m sure this will come in handy again so here is how it goes:</p>
 
-<p>These computer modeling and machine-learning techniques are generating enormous libraries of materials candidates. Researchers hope that this approach will produce a giant leap in the speed and usefulness of materials discovery. British materials scientist Neil Alford observes, “We are now seeing a real convergence of what experimentalists want and what theorists can deliver.”  </p>
+<h2 id="toc_0"><strong>Includes</strong></h2>
 
-<p>The most promising results so far have been achieved with lithium compounds, used in batteries and other applications..  </p>
+<pre><code class="language-c">    #include &lt;netinet/in.h&gt;
+    #include &lt;sys/socket.h&gt;
+    #include &lt;arpa/inet.h&gt;
+    #include &lt;net/if.h&gt;
+    #include &lt;netinet/ip.h&gt;
+    #include &lt;netinet/udp.h&gt;
+    #include &lt;netinet/ether.h&gt;
+    #include &lt;linux/if_packet.h&gt;
+</code></pre>
 
-<p>The Nature article also argues that “artificial intelligence will help researchers comb through vast numbers of materials to find just the one they need for the application at hand.” The standard process starts with researchers applying machine learning to lab data and computer modeling in order to extract common patterns and predict new materials. Researchers then look for a material with specific properties and pass along their findings to chemists, who try to produce the theoretical material for testing.  </p>
+<h2 id="toc_1"><strong>Open the raw socket:</strong></h2>
 
-<p>Personally, I think huge opportunities are available from these types of materials databases — the potential is almost limitless. The advances made so far remind me of the robotic discovery efforts at Dow, the advances made by Bristol-Myers Squibb and other pharmaceutical companies, and recent virus discoveries, such as the ones made by Angie Belcher’s group. These discoveries have resulted in everything from catalysts for oxidative coupling of methane to battery electrode materials. These types of efforts are the physical analog to the computational approaches described in these material databases.  </p>
+<pre><code class="language-c">    int sockfd;
+    ...
+    /* Open RAW socket to send on */
+    if ((sockfd = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW)) == -1) {
+        perror(&quot;socket&quot;);
+    }
+</code></pre>
 
-<p>Transforming computer predictions to real-world technologies, however, is difficult. Existing databases include a small fraction of all the known materials and only a few possible ones. Researchers have also learned that data-driven discovery works well for some materials, but not for others. And even when researchers successfully isolate a material with potential, it can take years for chemists to synthesize it in a lab.  </p>
+<h2 id="toc_2"><strong>Get the index of the interface to send on:</strong></h2>
 
-<p>Despite these challenges, researchers remain confident that they will discover many useful materials that could lead to innovations in electronics, robotics, healthcare, and other fields. In my opinion, the key for researchers is to avoid the scattershot approach. If scientists can try everything, how do we decide where to focus our efforts? To focus the research there must still be brains behind the computational or robotic synthesis efforts. We need to ensure that we aren’t trying to boil the ocean.  </p>
+<pre><code class="language-c">    struct ifreq if_idx;
+    ...
+    memset(&amp;if_idx, 0, sizeof(struct ifreq));
+    strncpy(if_idx.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
+    if (ioctl(sock, SIOCGIFINDEX, &amp;if_idx) &lt; 0)
+        perror(&quot;SIOCGIFINDEX&quot;);  
+</code></pre>
 
-<p>I believe that success will require collaboration between different disciplines and groups. For example, people who understand the computational work may not completely understand the physical impact on materials. We must combine those two areas to provide meaningful information that can be used to impact physical materials. Information inside a computer is only useful if we can translate it to the physical world.  </p>
+<h2 id="toc_3"><strong>Get the MAC address of the interface to send on:</strong></h2>
+
+<pre><code class="language-c">    struct ifreq if_mac;
+    ...
+    memset(&amp;if_mac, 0, sizeof(struct ifreq));
+    strncpy(if_mac.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
+    if (ioctl(sock, SIOCGIFHWADDR, &amp;if_mac) &lt; 0)
+        perror(&quot;SIOCGIFHWADDR&quot;);
+</code></pre>
+
+<h2 id="toc_4"><strong>Get the IP address of the interface to send on:</strong></h2>
+
+<pre><code class="language-c">    struct ifreq if_ip;
+    ...
+    memset(&amp;if_ip, 0, sizeof(struct ifreq));
+    strncpy(if_ip.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
+    if (ioctl(sock, SIOCGIFADDR, &amp;if_ip) &lt; 0)
+        perror(&quot;SIOCGIFADDR&quot;);
+</code></pre>
+
+<h2 id="toc_5"><strong>Construct the Ethernet header:</strong></h2>
+
+<pre><code class="language-c">    int tx_len = 0;
+    char sendbuf[1024];
+    struct ether_header *eh = (struct ether_header *) sendbuf;
+    ...
+    memset(sendbuf, 0, 1024);
+    /* Ethernet header */
+    eh-&gt;ether_shost[0] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[0];
+    eh-&gt;ether_shost[1] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[1];
+    eh-&gt;ether_shost[2] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[2];
+    eh-&gt;ether_shost[3] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[3];
+    eh-&gt;ether_shost[4] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[4];
+    eh-&gt;ether_shost[5] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[5];
+    eh-&gt;ether_dhost[0] = MY_DEST_MAC0;
+    eh-&gt;ether_dhost[1] = MY_DEST_MAC1;
+    eh-&gt;ether_dhost[2] = MY_DEST_MAC2;
+    eh-&gt;ether_dhost[3] = MY_DEST_MAC3;
+    eh-&gt;ether_dhost[4] = MY_DEST_MAC4;
+    eh-&gt;ether_dhost[5] = MY_DEST_MAC5;
+    eh-&gt;ether_type = htons(ETH_P_IP);
+    tx_len += sizeof(struct ether_header);  
+</code></pre>
+
+<h2 id="toc_6"><strong>Construct the IP header:</strong></h2>
+
+<pre><code class="language-c">    struct iphdr *iph = (struct iphdr *) (sendbuf + sizeof(struct ether_header));
+    ...
+    /* IP Header */
+    iph-&gt;ihl = 5;
+    iph-&gt;version = 4;
+    iph-&gt;tos = 16; // Low delay
+    iph-&gt;id = htons(54321);
+    iph-&gt;ttl = ttl; // hops
+    iph-&gt;protocol = 17; // UDP
+    /* Source IP address, can be spoofed */
+    iph-&gt;saddr = inet_addr(inet_ntoa(((struct sockaddr_in *)&amp;if_ip.ifr_addr)-&gt;sin_addr));
+    // iph-&gt;saddr = inet_addr(&quot;192.168.0.112&quot;);
+    /* Destination IP address */
+    iph-&gt;daddr = inet_addr(&quot;192.168.0.111&quot;);
+    tx_len += sizeof(struct iphdr);  
+</code></pre>
+
+<h2 id="toc_7"><strong>Construct the UDP header:</strong></h2>
+
+<pre><code class="language-c">    struct udphdr *udph = (struct udphdr *) (sendbuf + sizeof(struct iphdr) + sizeof(struct ether_header));
+    ...
+    /* UDP Header */
+    udph-&gt;source = htons(3423);
+    udph-&gt;dest = htons(5342);
+    udph-&gt;check = 0; // skip
+    tx_len += sizeof(struct udphdr);  
+</code></pre>
+
+<h2 id="toc_8"><strong>Fill in UDP payload:</strong></h2>
+
+<pre><code class="language-c">    /* Packet data */
+    sendbuf[tx_len++] = 0xde;
+    sendbuf[tx_len++] = 0xad;
+    sendbuf[tx_len++] = 0xbe;
+    sendbuf[tx_len++] = 0xef;  
+</code></pre>
+
+<h2 id="toc_9"><strong>Fill in remaining header info:</strong></h2>
+
+<pre><code class="language-c">    unsigned short csum(unsigned short *buf, int nwords)
+    {
+        unsigned long sum;
+        for(sum=0; nwords&gt;0; nwords--)
+            sum += *buf++;
+        sum = (sum &gt;&gt; 16) + (sum &amp;0xffff);
+        sum += (sum &gt;&gt; 16);
+        return (unsigned short)(~sum);
+    }
+    ...
+    /* Length of UDP payload and header */
+    udph-&gt;len = htons(tx_len - sizeof(struct ether_header) - sizeof(struct iphdr));
+    /* Length of IP payload and header */
+    iph-&gt;tot_len = htons(tx_len - sizeof(struct ether_header));
+    /* Calculate IP checksum on completed header */
+    iph-&gt;check = csum((unsigned short *)(sendbuf+sizeof(struct ether_header)), sizeof(struct iphdr)/2);  
+</code></pre>
+
+<h2 id="toc_10"><strong>Send the raw Ethernet packet:</strong></h2>
+
+<pre><code class="language-c">    /* Destination address */
+    struct sockaddr_ll socket_address;
+    ...
+    /* Index of the network device */
+    socket_address.sll_ifindex = if_idx.ifr_ifindex;
+    /* Address length*/
+    socket_address.sll_halen = ETH_ALEN;
+    /* Destination MAC */
+    socket_address.sll_addr[0] = MY_DEST_MAC0;
+    socket_address.sll_addr[1] = MY_DEST_MAC1;
+    socket_address.sll_addr[2] = MY_DEST_MAC2;
+    socket_address.sll_addr[3] = MY_DEST_MAC3;
+    socket_address.sll_addr[4] = MY_DEST_MAC4;
+    socket_address.sll_addr[5] = MY_DEST_MAC5;
+    /* Send packet */
+    if (sendto(sock, sendbuf, tx_len, 0, (struct sockaddr*)&amp;socket_address, sizeof(struct sockaddr_ll)) &lt; 0)
+        printf(&quot;Send failed\n&quot;);  
+</code></pre>
+
+<h1 id="toc_11">Code available <a href="https://gist.github.com/itsuwari/ad6c8c963fa5c914ca10ee391a9d5d9b">here</a></h1>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Drive Headless Chromium with Python3]]></title>
+    <link href="https://back.re/15136691816848.html"/>
+    <updated>2017-12-19T16:39:41+09:00</updated>
+    <id>https://back.re/15136691816848.html</id>
+    <content type="html"><![CDATA[
+<h1 id="toc_0">Browser Automation</h1>
+
+<p>Before we dive into any code, let’s talk about what a headless browser is and why it’s useful. In short, headless browsers are web browsers without a graphical user interface (GUI) and are usually controlled programmatically or via a command-line interface.  </p>
+
+<p>One of the many use cases for headless browsers is automating usability testing or testing browser interactions. If you’re trying to check how a page may render in a different browser or confirm that page elements are present after a user initiates a certain workflow, using a headless browser can provide a lot of assistance. In addition to this, traditional web-oriented tasks like web scraping can be difficult to do if the content is rendered dynamically (say, via Javascript). Using a headless browser allows easy access to this content because the content is rendered exactly as it would be in a full browser.  </p>
+
+<h1 id="toc_1">Headless Chrome and Python</h1>
+
+<h2 id="toc_2">Going Headless!</h2>
+
+<h3 id="toc_3">Setup</h3>
+
+<p>Before we get started, we need to install Chromium and download the latest ChromeDriver.</p>
+
+<p>Next, let’s make a folder that will contain all of our files:  </p>
+
+<pre><code>mkdir going_headless
+#Now we can move the ChromeDriver into the directory that we just made:
+mv Downloads/chromedriver going_headless/
+</code></pre>
+
+<p>Since we are using Selenium with Python, it’s a good idea to make a Python virtual environment. I use virtualenv, so if you use another virtual environment manager, the commands may be different.  </p>
+
+<pre><code>$ cd going_headless &amp;&amp; virtualenv -p python3 env  
+$ source env/bin/activate
+</code></pre>
+
+<p>The next thing we need to do is install Selenium. If you’re not familiar with Selenium, it’s a suite of tools that allows developers to programmatically drive web browsers. It has language bindings for Java, C#, Ruby, Javascript (Node), and Python. To install the Selenium package for Python, we can run the following:  </p>
+
+<pre><code>pip3 install selenium  
+</code></pre>
+
+<h3 id="toc_4">Example</h3>
+
+<p>Now that we’ve gotten all of that out of the way, let’s get to the fun part. Our goal is to write a script that searches for my name “Hamples” on back.re, and checks that a recent article I wrote about Android security is listed in the results. If you’ve followed the instructions above, you can use the headless version of Chromium with Selenium like so:  </p>
+
+<pre><code>import os  
+from selenium import webdriver  
+from selenium.webdriver.common.keys import Keys  
+from selenium.webdriver.chrome.options import Options`  
+
+`chrome_options = Options()  
+chrome_options.add_argument(&quot;--headless&quot;)  
+chrome_options.binary_location = &#39;/Applications/Google Chromium.app/Contents/MacOS/Google Chromium&#39;`    
+
+`driver = webdriver.Chrome(executable_path=os.path.abspath(“chromedriver&quot;),   chrome_options=chrome_options)  
+driver.get(&quot;https://back.re&quot;)`  
+
+`magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
+if magnifying_glass.is_displayed():  
+  magnifying_glass.click()  
+else:  
+  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
+  menu_button.click()`  
+
+`search_field = driver.find_element_by_id(&quot;site-search&quot;)  
+search_field.clear()  
+search_field.send_keys(&quot;Hamples&quot;)  
+search_field.send_keys(Keys.RETURN)  
+assert &quot;Nothing...&quot; in driver.page_source   driver.close()` 
+</code></pre>
+
+<h3 id="toc_5">Example Explained</h3>
+
+<p>The driver.get function will be used navigate to the specified URL.</p>
+
+<pre><code>driver.get(&quot;https://back.re&quot;)
+</code></pre>
+
+<p>The back.re website is responsive, so we have to handle different conditions. As a result, we check to see if the expected search button is displayed. If it isn’t, we click the menu button to enter our search term.  </p>
+
+<pre><code>magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
+if magnifying_glass.is_displayed():  
+  magnifying_glass.click()  
+else:  
+  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
+  menu_button.click()  
+</code></pre>
+
+<p>Now we clear the search field, search for my name, and send the RETURN key to the drive.  </p>
+
+<pre><code>search_field = driver.find_element_by_id(&quot;site-search&quot;)  
+search_field.clear()  
+search_field.send_keys(&quot;Olabode&quot;)  
+search_field.send_keys(Keys.RETURN)
+</code></pre>
+
+<p>We check to make sure that the blog post title from one of my most recent posts is in the page’s source.  </p>
+
+<pre><code>assert &quot;Nothing...&quot; in driver.page_source
+</code></pre>
+
+<p>And finally, we close the browser.</p>
+
+<p><code>driver.close()</code>.</p>
+
+<h2 id="toc_6">Benchmarks</h2>
+
+<h3 id="toc_7">Head to Headless</h3>
+
+<p>So, it’s cool that we can now control Chrome using Selenium and Python without having to see a browser window, but we are more interested in the performance benefits we talked about earlier. Using the same script above, we profiled the time it took to complete the tasks, peak memory usage, and CPU percentage. We polled CPU and memory usage with psutil and measured the time for task completion using timeit.  </p>
+
+<p>For our small script, there were very small differences in the amount of time taken to complete the task (4.3%), memory usage (.5%), and CPU percentage (5.2%). While the gains in our example were very minimal, these gains would prove to be beneficial in a test suite with dozens of tests.  </p>
+
+<h1 id="toc_8">Resources</h1>
+
+<p>Chrome Links:  </p>
+
+<ul>
+<li><a href="https://www.chromium.org/getting-involved/download-chromium">Chromium</a></li>
+<li><a href="https://sites.google.com/a/chromium.org/chromedriver/downloads">Chrome Drive</a></li>
+<li><a href="https://chromedevtools.github.io/devtools-protocol/">DevTools API</a></li>
+</ul>
+
+<p>Selenium Links:  </p>
+
+<ul>
+<li><a href="https://www.seleniumhq.org/">Selenium HQ</a></li>
+<li><a href="https://selenium-python.readthedocs.io/">Python package</a></li>
+</ul>
 
 ]]></content>
   </entry>
