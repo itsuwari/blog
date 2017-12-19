@@ -1,0 +1,643 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Hampus Blog]]></title>
+  <link href="https://back.re/atom.xml" rel="self"/>
+  <link href="https://back.re/"/>
+  <updated>2017-12-19T16:54:01+09:00</updated>
+  <id>https://back.re/</id>
+  <author>
+    <name><![CDATA[]]></name>
+    
+  </author>
+  <generator uri="http://www.mweb.im">MWeb</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Drive Headless Chromium with Python3]]></title>
+    <link href="https://back.re/15136691816848.html"/>
+    <updated>2017-12-19T16:39:41+09:00</updated>
+    <id>https://back.re/15136691816848.html</id>
+    <content type="html"><![CDATA[
+<h1 id="toc_0">Browser Automation</h1>
+
+<p>Before we dive into any code, let’s talk about what a headless browser is and why it’s useful. In short, headless browsers are web browsers without a graphical user interface (GUI) and are usually controlled programmatically or via a command-line interface.  </p>
+
+<p>One of the many use cases for headless browsers is automating usability testing or testing browser interactions. If you’re trying to check how a page may render in a different browser or confirm that page elements are present after a user initiates a certain workflow, using a headless browser can provide a lot of assistance. In addition to this, traditional web-oriented tasks like web scraping can be difficult to do if the content is rendered dynamically (say, via Javascript). Using a headless browser allows easy access to this content because the content is rendered exactly as it would be in a full browser.  </p>
+
+<h1 id="toc_1">Headless Chrome and Python</h1>
+
+<h2 id="toc_2">Going Headless!</h2>
+
+<h3 id="toc_3">Setup</h3>
+
+<p>Before we get started, we need to install Chromium and download the latest ChromeDriver.</p>
+
+<p>Next, let’s make a folder that will contain all of our files:  </p>
+
+<pre><code>mkdir going_headless
+#Now we can move the ChromeDriver into the directory that we just made:
+mv Downloads/chromedriver going_headless/
+</code></pre>
+
+<p>Since we are using Selenium with Python, it’s a good idea to make a Python virtual environment. I use virtualenv, so if you use another virtual environment manager, the commands may be different.  </p>
+
+<pre><code>$ cd going_headless &amp;&amp; virtualenv -p python3 env  
+$ source env/bin/activate
+</code></pre>
+
+<p>The next thing we need to do is install Selenium. If you’re not familiar with Selenium, it’s a suite of tools that allows developers to programmatically drive web browsers. It has language bindings for Java, C#, Ruby, Javascript (Node), and Python. To install the Selenium package for Python, we can run the following:  </p>
+
+<pre><code>pip3 install selenium  
+</code></pre>
+
+<h3 id="toc_4">Example</h3>
+
+<p>Now that we’ve gotten all of that out of the way, let’s get to the fun part. Our goal is to write a script that searches for my name “Hamples” on back.re, and checks that a recent article I wrote about Android security is listed in the results. If you’ve followed the instructions above, you can use the headless version of Chromium with Selenium like so:  </p>
+
+<pre><code>import os  
+from selenium import webdriver  
+from selenium.webdriver.common.keys import Keys  
+from selenium.webdriver.chrome.options import Options`  
+
+`chrome_options = Options()  
+chrome_options.add_argument(&quot;--headless&quot;)  
+chrome_options.binary_location = &#39;/Applications/Google Chromium.app/Contents/MacOS/Google Chromium&#39;`    
+
+`driver = webdriver.Chrome(executable_path=os.path.abspath(“chromedriver&quot;),   chrome_options=chrome_options)  
+driver.get(&quot;https://back.re&quot;)`  
+
+`magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
+if magnifying_glass.is_displayed():  
+  magnifying_glass.click()  
+else:  
+  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
+  menu_button.click()`  
+
+`search_field = driver.find_element_by_id(&quot;site-search&quot;)  
+search_field.clear()  
+search_field.send_keys(&quot;Hamples&quot;)  
+search_field.send_keys(Keys.RETURN)  
+assert &quot;Nothing...&quot; in driver.page_source   driver.close()` 
+</code></pre>
+
+<h3 id="toc_5">Example Explained</h3>
+
+<p>The driver.get function will be used navigate to the specified URL.</p>
+
+<pre><code>driver.get(&quot;https://back.re&quot;)
+</code></pre>
+
+<p>The back.re website is responsive, so we have to handle different conditions. As a result, we check to see if the expected search button is displayed. If it isn’t, we click the menu button to enter our search term.  </p>
+
+<pre><code>magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
+if magnifying_glass.is_displayed():  
+  magnifying_glass.click()  
+else:  
+  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
+  menu_button.click()  
+</code></pre>
+
+<p>Now we clear the search field, search for my name, and send the RETURN key to the drive.  </p>
+
+<pre><code>search_field = driver.find_element_by_id(&quot;site-search&quot;)  
+search_field.clear()  
+search_field.send_keys(&quot;Olabode&quot;)  
+search_field.send_keys(Keys.RETURN)
+</code></pre>
+
+<p>We check to make sure that the blog post title from one of my most recent posts is in the page’s source.  </p>
+
+<pre><code>assert &quot;Nothing...&quot; in driver.page_source
+</code></pre>
+
+<p>And finally, we close the browser.</p>
+
+<p><code>driver.close()</code>.</p>
+
+<h2 id="toc_6">Benchmarks</h2>
+
+<h3 id="toc_7">Head to Headless</h3>
+
+<p>So, it’s cool that we can now control Chrome using Selenium and Python without having to see a browser window, but we are more interested in the performance benefits we talked about earlier. Using the same script above, we profiled the time it took to complete the tasks, peak memory usage, and CPU percentage. We polled CPU and memory usage with psutil and measured the time for task completion using timeit.  </p>
+
+<p>For our small script, there were very small differences in the amount of time taken to complete the task (4.3%), memory usage (.5%), and CPU percentage (5.2%). While the gains in our example were very minimal, these gains would prove to be beneficial in a test suite with dozens of tests.  </p>
+
+<h1 id="toc_8">Resources</h1>
+
+<p>Chrome Links:  </p>
+
+<ul>
+<li><a href="https://www.chromium.org/getting-involved/download-chromium">Chromium</a></li>
+<li><a href="https://sites.google.com/a/chromium.org/chromedriver/downloads">Chrome Drive</a></li>
+<li><a href="https://chromedevtools.github.io/devtools-protocol/">DevTools API</a></li>
+</ul>
+
+<p>Selenium Links:  </p>
+
+<ul>
+<li><a href="https://www.seleniumhq.org/">Selenium HQ</a></li>
+<li><a href="https://selenium-python.readthedocs.io/">Python package</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Sending raw Ethernet packets from a specific interface in C on Linux]]></title>
+    <link href="https://back.re/15136687695430.html"/>
+    <updated>2017-12-19T16:32:49+09:00</updated>
+    <id>https://back.re/15136687695430.html</id>
+    <content type="html"><![CDATA[
+<p>Lately I’ve been writing some code to send packets to a specific MAC address from a specific interface. I’m sure this will come in handy again so here is how it goes:</p>
+
+<h2 id="toc_0"><strong>Includes</strong></h2>
+
+<pre><code class="language-c">    #include &lt;netinet/in.h&gt;
+    #include &lt;sys/socket.h&gt;
+    #include &lt;arpa/inet.h&gt;
+    #include &lt;net/if.h&gt;
+    #include &lt;netinet/ip.h&gt;
+    #include &lt;netinet/udp.h&gt;
+    #include &lt;netinet/ether.h&gt;
+    #include &lt;linux/if_packet.h&gt;
+</code></pre>
+
+<h2 id="toc_1"><strong>Open the raw socket:</strong></h2>
+
+<pre><code class="language-c">    int sockfd;
+    ...
+    /* Open RAW socket to send on */
+    if ((sockfd = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW)) == -1) {
+        perror(&quot;socket&quot;);
+    }
+</code></pre>
+
+<h2 id="toc_2"><strong>Get the index of the interface to send on:</strong></h2>
+
+<pre><code class="language-c">    struct ifreq if_idx;
+    ...
+    memset(&amp;if_idx, 0, sizeof(struct ifreq));
+    strncpy(if_idx.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
+    if (ioctl(sock, SIOCGIFINDEX, &amp;if_idx) &lt; 0)
+        perror(&quot;SIOCGIFINDEX&quot;);  
+</code></pre>
+
+<h2 id="toc_3"><strong>Get the MAC address of the interface to send on:</strong></h2>
+
+<pre><code class="language-c">    struct ifreq if_mac;
+    ...
+    memset(&amp;if_mac, 0, sizeof(struct ifreq));
+    strncpy(if_mac.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
+    if (ioctl(sock, SIOCGIFHWADDR, &amp;if_mac) &lt; 0)
+        perror(&quot;SIOCGIFHWADDR&quot;);
+</code></pre>
+
+<h2 id="toc_4"><strong>Get the IP address of the interface to send on:</strong></h2>
+
+<pre><code class="language-c">    struct ifreq if_ip;
+    ...
+    memset(&amp;if_ip, 0, sizeof(struct ifreq));
+    strncpy(if_ip.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
+    if (ioctl(sock, SIOCGIFADDR, &amp;if_ip) &lt; 0)
+        perror(&quot;SIOCGIFADDR&quot;);
+</code></pre>
+
+<h2 id="toc_5"><strong>Construct the Ethernet header:</strong></h2>
+
+<pre><code class="language-c">    int tx_len = 0;
+    char sendbuf[1024];
+    struct ether_header *eh = (struct ether_header *) sendbuf;
+    ...
+    memset(sendbuf, 0, 1024);
+    /* Ethernet header */
+    eh-&gt;ether_shost[0] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[0];
+    eh-&gt;ether_shost[1] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[1];
+    eh-&gt;ether_shost[2] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[2];
+    eh-&gt;ether_shost[3] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[3];
+    eh-&gt;ether_shost[4] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[4];
+    eh-&gt;ether_shost[5] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[5];
+    eh-&gt;ether_dhost[0] = MY_DEST_MAC0;
+    eh-&gt;ether_dhost[1] = MY_DEST_MAC1;
+    eh-&gt;ether_dhost[2] = MY_DEST_MAC2;
+    eh-&gt;ether_dhost[3] = MY_DEST_MAC3;
+    eh-&gt;ether_dhost[4] = MY_DEST_MAC4;
+    eh-&gt;ether_dhost[5] = MY_DEST_MAC5;
+    eh-&gt;ether_type = htons(ETH_P_IP);
+    tx_len += sizeof(struct ether_header);  
+</code></pre>
+
+<h2 id="toc_6"><strong>Construct the IP header:</strong></h2>
+
+<pre><code class="language-c">    struct iphdr *iph = (struct iphdr *) (sendbuf + sizeof(struct ether_header));
+    ...
+    /* IP Header */
+    iph-&gt;ihl = 5;
+    iph-&gt;version = 4;
+    iph-&gt;tos = 16; // Low delay
+    iph-&gt;id = htons(54321);
+    iph-&gt;ttl = ttl; // hops
+    iph-&gt;protocol = 17; // UDP
+    /* Source IP address, can be spoofed */
+    iph-&gt;saddr = inet_addr(inet_ntoa(((struct sockaddr_in *)&amp;if_ip.ifr_addr)-&gt;sin_addr));
+    // iph-&gt;saddr = inet_addr(&quot;192.168.0.112&quot;);
+    /* Destination IP address */
+    iph-&gt;daddr = inet_addr(&quot;192.168.0.111&quot;);
+    tx_len += sizeof(struct iphdr);  
+</code></pre>
+
+<h2 id="toc_7"><strong>Construct the UDP header:</strong></h2>
+
+<pre><code class="language-c">    struct udphdr *udph = (struct udphdr *) (sendbuf + sizeof(struct iphdr) + sizeof(struct ether_header));
+    ...
+    /* UDP Header */
+    udph-&gt;source = htons(3423);
+    udph-&gt;dest = htons(5342);
+    udph-&gt;check = 0; // skip
+    tx_len += sizeof(struct udphdr);  
+</code></pre>
+
+<h2 id="toc_8"><strong>Fill in UDP payload:</strong></h2>
+
+<pre><code class="language-c">    /* Packet data */
+    sendbuf[tx_len++] = 0xde;
+    sendbuf[tx_len++] = 0xad;
+    sendbuf[tx_len++] = 0xbe;
+    sendbuf[tx_len++] = 0xef;  
+</code></pre>
+
+<h2 id="toc_9"><strong>Fill in remaining header info:</strong></h2>
+
+<pre><code class="language-c">    unsigned short csum(unsigned short *buf, int nwords)
+    {
+        unsigned long sum;
+        for(sum=0; nwords&gt;0; nwords--)
+            sum += *buf++;
+        sum = (sum &gt;&gt; 16) + (sum &amp;0xffff);
+        sum += (sum &gt;&gt; 16);
+        return (unsigned short)(~sum);
+    }
+    ...
+    /* Length of UDP payload and header */
+    udph-&gt;len = htons(tx_len - sizeof(struct ether_header) - sizeof(struct iphdr));
+    /* Length of IP payload and header */
+    iph-&gt;tot_len = htons(tx_len - sizeof(struct ether_header));
+    /* Calculate IP checksum on completed header */
+    iph-&gt;check = csum((unsigned short *)(sendbuf+sizeof(struct ether_header)), sizeof(struct iphdr)/2);  
+</code></pre>
+
+<h2 id="toc_10"><strong>Send the raw Ethernet packet:</strong></h2>
+
+<pre><code class="language-c">    /* Destination address */
+    struct sockaddr_ll socket_address;
+    ...
+    /* Index of the network device */
+    socket_address.sll_ifindex = if_idx.ifr_ifindex;
+    /* Address length*/
+    socket_address.sll_halen = ETH_ALEN;
+    /* Destination MAC */
+    socket_address.sll_addr[0] = MY_DEST_MAC0;
+    socket_address.sll_addr[1] = MY_DEST_MAC1;
+    socket_address.sll_addr[2] = MY_DEST_MAC2;
+    socket_address.sll_addr[3] = MY_DEST_MAC3;
+    socket_address.sll_addr[4] = MY_DEST_MAC4;
+    socket_address.sll_addr[5] = MY_DEST_MAC5;
+    /* Send packet */
+    if (sendto(sock, sendbuf, tx_len, 0, (struct sockaddr*)&amp;socket_address, sizeof(struct sockaddr_ll)) &lt; 0)
+        printf(&quot;Send failed\n&quot;);  
+</code></pre>
+
+<h1 id="toc_11">Code available <a href="https://gist.github.com/itsuwari/ad6c8c963fa5c914ca10ee391a9d5d9b">here</a></h1>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Thoughts on the Nintendo Switch]]></title>
+    <link href="https://back.re/15136686867614.html"/>
+    <updated>2017-12-19T16:31:26+09:00</updated>
+    <id>https://back.re/15136686867614.html</id>
+    <content type="html"><![CDATA[
+<p>This past weekend marked the first time the public got their hands on the newest console coming from Nintendo, the Nintendo Switch. The Switch’s first look and other imagery has shown what looks like an older target audience than kids and families, a switch (no pun intended) from Nintendo’s other consoles. So will it make a good family console, like the Wii U?  </p>
+
+<p>I had a chance to get my hands on it and I’m convinced the Switch will be our next must-have console for the entire family. “Nintendo Switch is for everyone,” Cindy Gordon, Nintendo’s VP of Corporate Affairs told me. Here are a few reasons why you should consider picking it up for family.  </p>
+
+<h1 id="toc_0">The game line-up is as great as you’d expect — and more.</h1>
+
+<p>There are some things you can anticipate when a new Nintendo console is announced — a new Legend of Zelda, a new Mario adventure, and memorable party games are just a few of Nintendo’s area of expertise that gamers have come to expect, and the Switch will deliver on all of those. (Super Mario Odyssey is such a big adventure, however, that it won’t be available until later in the year.)  </p>
+
+<p>But the Nintendo Switch is also branching out into new games and franchises that have never been on a Nintendo system before. The Elder Scrolls: Skyrim, FIFA, and NBA 2K are also headed to the Switch, and Nintendo is committed to working with third-party developers for an even more diverse offering of games.  </p>
+
+<h1 id="toc_1">The Switch is incredibly portable.</h1>
+
+<p>Easily the most appealing part of the Nintendo Switch is the hassle-free portability. The screen quickly and simply undocks from the console, the Joy-Con controllers attach to the side, and you instantly have a portable game with high-quality graphics that look just as good as they do on the TV.  </p>
+
+<p>If you’ve ever dreamed about playing Skyrim during a long flight or the kids having Splatoon battles in the backseat on the way to Grandma’s, the Switch is about to make that a reality–without any cords or mess, said Gordon. Battery life ranges from two-and-a-half to six-and-a-half hours, depending on the game. The Legend of Zelda: Breath of the Wild will last about three hours before needing to recharge, estimated Gordon.   </p>
+
+<h1 id="toc_2">The controllers are made for hands of all sizes.</h1>
+
+<p>The Switch’s controllers, known as Joy-Con, are surprisingly small and can fit hands of all sizes and ages. “Joy-Con are little technological feats of innovation that pack a powerful punch,” Gordon said.  </p>
+
+<p>The innovative design allows different ways to play depending on the game you’re playing. Attach it to the sides of the screen for gaming on the go, use it as a traditional controller, or pull the two pieces apart and use them similar to Wiimotes. Kids and adults alike will appreciate the flexibility.  </p>
+
+<p>When separated, you can also turn the Joy-Con horizontally and use it in a style similar to the original NES controller. I had the chance to play Mario Kart 8 Deluxe with it in that manner, however, and even my small hands started to cramp a little due to the tiny controller. Parents may want to pick up the Pro Controller if they’ll be doing just as much gaming as the kids.  </p>
+
+<h1 id="toc_3">Parental controls are built in.</h1>
+
+<p>You know.  </p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Free Alternatives to Gaussian]]></title>
+    <link href="https://back.re/15136684903532.html"/>
+    <updated>2017-12-19T16:28:10+09:00</updated>
+    <id>https://back.re/15136684903532.html</id>
+    <content type="html"><![CDATA[
+<p>&#39;Free software&#39; here not means &#39;libre software&#39;.  </p>
+
+<h1 id="toc_0">1. <a href="http://www.gromacs.org/">GAMESS</a></h1>
+
+<p>Most similar to Gaussian, and code is really clean and easy to read, even have <a href="http://www.gromacs.org/Developer_Zone">documents</a> for developers.    </p>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td>BSD</td>
+</tr>
+</tbody>
+</table>
+
+<h1 id="toc_1">2. <a href="http://www.psicode.org/">PSI</a></h1>
+
+<p>An Open-Source electronic structure program emphasizing automation, advanced libraries, and interoperability.  </p>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td>GNUv3</td>
+</tr>
+</tbody>
+</table>
+
+<h1 id="toc_2">3. <a href="http://lammps.sandia.gov/">LAMMPS</a></h1>
+
+<p>Has potentials for solid-state materials (metals, semiconductors) and soft matter (biomolecules, polymers) and coarse-grained or mesoscopic systems. It can be used to model atoms or, more generically, as a parallel particle simulator at the atomic, meso, or continuum scale.     </p>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td>GPLv3</td>
+</tr>
+</tbody>
+</table>
+
+<!--more-->
+
+<h1 id="toc_3">4. <a href="https://ccpforge.cse.rl.ac.uk/gf/project/castep/">CASTEP</a></h1>
+
+<p>Specializes in periodic systems with plane wave basis sets.    </p>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>No</td>
+<td>commercial</td>
+</tr>
+</tbody>
+</table>
+
+<h1 id="toc_4">5. <a href="http://www.qtp.ufl.edu/ACES/">ACES</a></h1>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td>GPLv3</td>
+</tr>
+</tbody>
+</table>
+
+<p>Specializes in high level quantum chemistry calculations.<br/><br/>
+Taken the best features of parallel implementations of quantum chemistry methods for electronic structure.  </p>
+
+<h1 id="toc_5">6.<a href="http://www.diracprogram.org/doku.php">DIRAC</a></h1>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>No</td>
+<td>Unknown</td>
+</tr>
+</tbody>
+</table>
+
+<p>Oriented towards relativistic quantum chemistry problems.</p>
+
+<h1 id="toc_6">7. <a href="http://www.nwchem-sw.org/index.php/Main_Page">NWChem</a></h1>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td><a href="https://en.wikipedia.org/wiki/Educational_Community_License">ECL</a></td>
+</tr>
+</tbody>
+</table>
+
+<p>Can calculate a smaller set of properties but it can handle mixed QM/MM calculations and periodic systems like solids.</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Inevitable Comparison: TCP vs UDP]]></title>
+    <link href="https://back.re/15136683515000.html"/>
+    <updated>2017-12-19T16:25:51+09:00</updated>
+    <id>https://back.re/15136683515000.html</id>
+    <content type="html"><![CDATA[
+<p>We use Transmission Control Protocol (TCP) and User Datagram Protocol (UDP) to transfer data over the internet.  </p>
+
+<p>TCP is the most commonly used protocol because it offers a lot of built-in features such as connection, error-checking and ordering. Also packet delivery is guaranteed.  </p>
+
+<p>UDP is also one of the most used protocol. While TCP offers a lot of features, UDP just provides packet throwing. There is no connection, error-checking, ordering etc.  </p>
+
+<p>Before talking about use cases, let’s look at their features.<br/>
+Connection</p>
+
+<ul>
+<li>TCP: Connection-oriented (persistent) </li>
+<li>UDP: Connectionless (fresh air)</li>
+</ul>
+
+<p>Reliability  </p>
+
+<ul>
+<li>TCP: Reliable (Ordered, Guaranteed) </li>
+<li>UDP: Unreliable (Drop, Disordering possiblities)<br/></li>
+</ul>
+
+<p>Weight  </p>
+
+<ul>
+<li>TCP: Heavy (Background mechanisms)</li>
+<li><p>UDP: Light (Simply throw packets)<br/>
+Transport</p></li>
+<li><p>TCP: Stream (Continous, Ordered)</p></li>
+<li><p>UDP: Datagram (Unrelated delivery)<br/>
+Flow Control</p></li>
+<li><p>TCP: Windowing, Congestion Avoidance</p></li>
+<li><p>UDP: Nothing<br/>
+Speed</p></li>
+<li><p>TCP: Slow (Resending, Recovering, Error-checking etc.)</p></li>
+<li><p>UDP: Fast (Nothing)</p></li>
+</ul>
+
+<p>We use TCP for important data because it has reliable and persistent pipeline. For example HTTP (Web), FTP (File), SMTP (Email), SSH (Terminal), SQL (DB Queries) built top of TCP.<br/>
+We use UDP for unimportant, temporal data because there is no consistent mechanism for reliability or persistance. For example games, VoIP services, media streaming, broadcasting built with UDP.  </p>
+
+<p>Choosing the right protocol depends on your needs. Most of developers use TCP because it does pretty much everything built-in also it’s easy as file i/o. My suggestion is use TCP for less frequent, more important data; use UDP for more frequent, less important data.  </p>
+
+<p>I tried to tell you basic differences between TCP and UDP protocols but there is one more thing to understand (where the magic begins!): They both developed on Internet Protocol (IP). TCP provides ‘connection’ but connection is an illusion! There is a three-way handshake for connection establishment. Simply, TCP is UDP with advanced features. There were some good developers, they implemented useful solutions for industry needs. Did you ever wanted to go deep into connection establishment, reliability mechanisms? Do you want to implement your own TCP-like protocol?</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Differences between TLS 1.2 and TLS 1.3]]></title>
+    <link href="https://back.re/15136685483165.html"/>
+    <updated>2017-12-19T16:29:08+09:00</updated>
+    <id>https://back.re/15136685483165.html</id>
+    <content type="html"><![CDATA[
+<p>The current version of TLS, TLS 1.2, was defined in RFC 5246 and has been in use for the past eight years by the majority of all web browsers.  Companies such as Cloudflare are already making TLS 1.3 available to their customers.   </p>
+
+<p>With the release of TLS 1.3, there are promises of enhanced security and speed. But how exactly do the changes from TLS 1.2 to TLS 1.3 cause these improvements? The following is a list of differences between TLS 1.2 and 1.3 that shows how the improvements are achieved.  </p>
+
+<p>This protocol was defined in an Internet Draft in April of 2017. TLS 1.3 contains improved security and speed. The major differences include:</p>
+
+<p>• The list of supported symmetric algorithms has been pruned of all legacy algorithms. The remaining algorithms all use Authenticated Encryption with Associated Data (AEAD) algorithms.</p>
+
+<p>• A zero-RTT (0-RTT) mode was added, saving a round-trip at connection setup for some application data at the cost of certain security properties.</p>
+
+<p>• All handshake messages after the ServerHello are now encrypted.</p>
+
+<p>• Key derivation functions have been re-designed, with the HMAC-based Extract-and-Expand Key Derivation Function (HKDF) being used as a primitive.</p>
+
+<p>• The handshake state machine has been restructured to be more consistent and remove superfluous messages.</p>
+
+<p>• ECC is now in the base spec  and includes new signature algorithms. Point format negotiation has been removed in favor of single point format for each curve.</p>
+
+<p>• Compression, custom DHE groups, and DSA have been removed, RSA padding now uses PSS.</p>
+
+<p>• TLS 1.2 version negotiation verification mechanism was deprecated in favor of a version list in an extension.</p>
+
+<p>• Session resumption with and without server-side state and the PSK-based ciphersuites of earlier versions of TLS have been replaced by a single new PSK exchange.</p>
+
+<p>In short, the major benefits of TLS 1.3 vs that of TLS 1.2 is faster speeds and improved security.  </p>
+
+<h2 id="toc_0">Speed Benefits of TLS 1.3</h2>
+
+<p>TLS and encrypted connections have always added a slight overhead when it comes to web performance. <a href="https://ja.wikipedia.org/wiki/HTTP/2">HTTP/2</a> definitely helped with this problem, but TLS 1.3 helps speed up encrypted connections even more. To put it simply, with TLS 1.2, two round-trips have been needed to complete the TLS handshake. With 1.3, it requires only <strong>one</strong> round-trip, which in turn cuts the encryption latency in half. This helps those encrypted connections feel just a little bit snappier than before.<br/><br/>
+<img src="media/15136685483165/tls1.3.png" alt="tls1.3"/></p>
+
+<p>Another advantage of is that in a sense, on sites you have previously visited, you can now send data on the first message to the server. This is called a “zero round trip.” (0-RTT). And yes, this also results in improved load time times.    </p>
+
+<h2 id="toc_1">Improved Security With TLS 1.3</h2>
+
+<p>A big problem with TLS 1.2 is that it’s often not configured properly it leaves websites vulnerable to attacks. TLS 1.3 now removes obsolete and insecure features from TLS 1.2, including the following:</p>
+
+<ul>
+<li>SHA-1</li>
+<li>RC4</li>
+<li>DES</li>
+<li>3DES</li>
+<li>AES-CBC</li>
+<li>MD5</li>
+<li>Arbitrary Diffie-Hellman groups — <a href="http://blog.intothesymmetry.com/2016/01/openssl-key-recovery-attack-on-dh-small.html">CVE-2016-0701</a></li>
+<li>EXPORT-strength ciphers – Responsible for <a href="https://censys.io/blog/freak">FREAK</a> and LogJam</li>
+</ul>
+
+<p>Because the protocol is in a sense more simplified, this make it less likely for administrators and developers to misconfigure the protocol. </p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Advanced Materials Through AI & Computational Materials Science]]></title>
+    <link href="https://back.re/15136677588220.html"/>
+    <updated>2017-12-19T16:15:58+09:00</updated>
+    <id>https://back.re/15136677588220.html</id>
+    <content type="html"><![CDATA[
+<p>A recent <a href="https://www.nature.com/news/can-artificial-intelligence-create-the-next-wonder-material-1.19850">Nature article</a> examines how materials researchers are using artificial intelligence to make quantum-mechanical calculations in only a few seconds that once took supercomputers hours to complete.  </p>
+
+<p>These computer modeling and machine-learning techniques are generating enormous libraries of materials candidates. Researchers hope that this approach will produce a giant leap in the speed and usefulness of materials discovery. British materials scientist Neil Alford observes, “We are now seeing a real convergence of what experimentalists want and what theorists can deliver.”  </p>
+
+<p>The most promising results so far have been achieved with lithium compounds, used in batteries and other applications..  </p>
+
+<p>The Nature article also argues that “artificial intelligence will help researchers comb through vast numbers of materials to find just the one they need for the application at hand.” The standard process starts with researchers applying machine learning to lab data and computer modeling in order to extract common patterns and predict new materials. Researchers then look for a material with specific properties and pass along their findings to chemists, who try to produce the theoretical material for testing.  </p>
+
+<p>Personally, I think huge opportunities are available from these types of materials databases — the potential is almost limitless. The advances made so far remind me of the robotic discovery efforts at Dow, the advances made by Bristol-Myers Squibb and other pharmaceutical companies, and recent virus discoveries, such as the ones made by Angie Belcher’s group. These discoveries have resulted in everything from catalysts for oxidative coupling of methane to battery electrode materials. These types of efforts are the physical analog to the computational approaches described in these material databases.  </p>
+
+<p>Transforming computer predictions to real-world technologies, however, is difficult. Existing databases include a small fraction of all the known materials and only a few possible ones. Researchers have also learned that data-driven discovery works well for some materials, but not for others. And even when researchers successfully isolate a material with potential, it can take years for chemists to synthesize it in a lab.  </p>
+
+<p>Despite these challenges, researchers remain confident that they will discover many useful materials that could lead to innovations in electronics, robotics, healthcare, and other fields. In my opinion, the key for researchers is to avoid the scattershot approach. If scientists can try everything, how do we decide where to focus our efforts? To focus the research there must still be brains behind the computational or robotic synthesis efforts. We need to ensure that we aren’t trying to boil the ocean.  </p>
+
+<p>I believe that success will require collaboration between different disciplines and groups. For example, people who understand the computational work may not completely understand the physical impact on materials. We must combine those two areas to provide meaningful information that can be used to impact physical materials. Information inside a computer is only useful if we can translate it to the physical world.  </p>
+
+]]></content>
+  </entry>
+  
+</feed>

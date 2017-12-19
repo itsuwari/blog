@@ -1,0 +1,252 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+    
+  Differences between TLS 1.2 and TLS 1.3 - Hampus Blog
+  
+  </title>
+ <meta name="description" content="Free is never free.">
+ <link href="atom.xml" rel="alternate" title="Hampus Blog" type="application/atom+xml">
+    <link rel="stylesheet" href="asset/css/foundation.min.css" />
+    <link rel="stylesheet" href="asset/css/docs.css" />
+
+    <script src="asset/js/vendor/modernizr.js"></script>
+    <script src="asset/js/vendor/jquery.js"></script>
+    <script src="asset/highlightjs/highlight.pack.js"></script>
+    <link href="asset/highlightjs/styles/github.css" media="screen, projection" rel="stylesheet" type="text/css">
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+  </head>
+  <body class="antialiased hide-extras">
+    
+    <div class="marketing off-canvas-wrap" data-offcanvas>
+      <div class="inner-wrap">
+
+
+<nav class="top-bar docs-bar hide-for-small" data-topbar>
+
+<div id="header">
+    <h1><a href="index.html">Hampus Blog</a></h1>
+</div>
+
+</nav>
+        <nav class="tab-bar show-for-small">
+  <a href="javascript:void(0)" class="left-off-canvas-toggle menu-icon">
+    <span> &nbsp; Hampus Blog</span>
+  </a>
+</nav>
+
+<aside class="left-off-canvas-menu">
+      <ul class="off-canvas-list">
+      <li><a href="index.html">Home</a></li>
+      
+        <li class="divider"></li>
+        <li><label>Material</label></li>
+
+          
+            <li><a title="Free Alternatives to Gaussian" href="15136684903532.html">Free Alternatives to Gaussian</a></li>
+          
+            <li><a title="Advanced Materials Through AI & Computational Materials Science" href="15136677588220.html">Advanced Materials Through AI & Computational Materials Science</a></li>
+          
+
+      
+        <li class="divider"></li>
+        <li><label>Network</label></li>
+
+          
+            <li><a title="Drive Headless Chromium with Python3" href="15136691816848.html">Drive Headless Chromium with Python3</a></li>
+          
+            <li><a title="Sending raw Ethernet packets from a specific interface in C on Linux" href="15136687695430.html">Sending raw Ethernet packets from a specific interface in C on Linux</a></li>
+          
+            <li><a title="Inevitable Comparison: TCP vs UDP" href="15136683515000.html">Inevitable Comparison: TCP vs UDP</a></li>
+          
+            <li><a title="Differences between TLS 1.2 and TLS 1.3" href="15136685483165.html">Differences between TLS 1.2 and TLS 1.3</a></li>
+          
+
+      
+        <li class="divider"></li>
+        <li><label>Offtopics</label></li>
+
+          
+            <li><a title="Thoughts on the Nintendo Switch" href="15136686867614.html">Thoughts on the Nintendo Switch</a></li>
+          
+
+      
+      </ul>
+    </aside>
+
+<a class="exit-off-canvas" href="#"></a>
+
+        <section id="main-content" role="main" class="scroll-container">
+
+          <div class="row">
+            <div class="large-3 medium-3 columns">
+              <div class="hide-for-small">
+                <div class="sidebar">
+                <nav>
+                  <ul id="side-nav" class="side-nav">
+
+                    
+                      <li class="side-title"><span>Material</span></li>
+                        
+                          <li><a title="Free Alternatives to Gaussian" href="15136684903532.html">Free Alternatives to Gaussian</a></li>
+                        
+                          <li><a title="Advanced Materials Through AI & Computational Materials Science" href="15136677588220.html">Advanced Materials Through AI & Computational Materials Science</a></li>
+                        
+
+                    
+                      <li class="side-title"><span>Network</span></li>
+                        
+                          <li><a title="Drive Headless Chromium with Python3" href="15136691816848.html">Drive Headless Chromium with Python3</a></li>
+                        
+                          <li><a title="Sending raw Ethernet packets from a specific interface in C on Linux" href="15136687695430.html">Sending raw Ethernet packets from a specific interface in C on Linux</a></li>
+                        
+                          <li><a title="Inevitable Comparison: TCP vs UDP" href="15136683515000.html">Inevitable Comparison: TCP vs UDP</a></li>
+                        
+                          <li><a title="Differences between TLS 1.2 and TLS 1.3" href="15136685483165.html">Differences between TLS 1.2 and TLS 1.3</a></li>
+                        
+
+                    
+                      <li class="side-title"><span>Offtopics</span></li>
+                        
+                          <li><a title="Thoughts on the Nintendo Switch" href="15136686867614.html">Thoughts on the Nintendo Switch</a></li>
+                        
+
+                    
+                  </ul>
+                </nav>
+                </div>
+              </div>
+            </div>
+            <div class="large-9 medium-9 columns">
+
+ <div class="markdown-body">
+<h1>Differences between TLS 1.2 and TLS 1.3</h1>
+
+<p>The current version of TLS, TLS 1.2, was defined in RFC 5246 and has been in use for the past eight years by the majority of all web browsers.  Companies such as Cloudflare are already making TLS 1.3 available to their customers.   </p>
+
+<p>With the release of TLS 1.3, there are promises of enhanced security and speed. But how exactly do the changes from TLS 1.2 to TLS 1.3 cause these improvements? The following is a list of differences between TLS 1.2 and 1.3 that shows how the improvements are achieved.  </p>
+
+<p>This protocol was defined in an Internet Draft in April of 2017. TLS 1.3 contains improved security and speed. The major differences include:</p>
+
+<p>• The list of supported symmetric algorithms has been pruned of all legacy algorithms. The remaining algorithms all use Authenticated Encryption with Associated Data (AEAD) algorithms.</p>
+
+<p>• A zero-RTT (0-RTT) mode was added, saving a round-trip at connection setup for some application data at the cost of certain security properties.</p>
+
+<p>• All handshake messages after the ServerHello are now encrypted.</p>
+
+<p>• Key derivation functions have been re-designed, with the HMAC-based Extract-and-Expand Key Derivation Function (HKDF) being used as a primitive.</p>
+
+<p>• The handshake state machine has been restructured to be more consistent and remove superfluous messages.</p>
+
+<p>• ECC is now in the base spec  and includes new signature algorithms. Point format negotiation has been removed in favor of single point format for each curve.</p>
+
+<p>• Compression, custom DHE groups, and DSA have been removed, RSA padding now uses PSS.</p>
+
+<p>• TLS 1.2 version negotiation verification mechanism was deprecated in favor of a version list in an extension.</p>
+
+<p>• Session resumption with and without server-side state and the PSK-based ciphersuites of earlier versions of TLS have been replaced by a single new PSK exchange.</p>
+
+<p>In short, the major benefits of TLS 1.3 vs that of TLS 1.2 is faster speeds and improved security.  </p>
+
+<h2 id="toc_0">Speed Benefits of TLS 1.3</h2>
+
+<p>TLS and encrypted connections have always added a slight overhead when it comes to web performance. <a href="https://ja.wikipedia.org/wiki/HTTP/2">HTTP/2</a> definitely helped with this problem, but TLS 1.3 helps speed up encrypted connections even more. To put it simply, with TLS 1.2, two round-trips have been needed to complete the TLS handshake. With 1.3, it requires only <strong>one</strong> round-trip, which in turn cuts the encryption latency in half. This helps those encrypted connections feel just a little bit snappier than before.<br/><br/>
+<img src="media/15136685483165/tls1.3.png" alt="tls1.3"/></p>
+
+<p>Another advantage of is that in a sense, on sites you have previously visited, you can now send data on the first message to the server. This is called a “zero round trip.” (0-RTT). And yes, this also results in improved load time times.    </p>
+
+<h2 id="toc_1">Improved Security With TLS 1.3</h2>
+
+<p>A big problem with TLS 1.2 is that it’s often not configured properly it leaves websites vulnerable to attacks. TLS 1.3 now removes obsolete and insecure features from TLS 1.2, including the following:</p>
+
+<ul>
+<li>SHA-1</li>
+<li>RC4</li>
+<li>DES</li>
+<li>3DES</li>
+<li>AES-CBC</li>
+<li>MD5</li>
+<li>Arbitrary Diffie-Hellman groups — <a href="http://blog.intothesymmetry.com/2016/01/openssl-key-recovery-attack-on-dh-small.html">CVE-2016-0701</a></li>
+<li>EXPORT-strength ciphers – Responsible for <a href="https://censys.io/blog/freak">FREAK</a> and LogJam</li>
+</ul>
+
+<p>Because the protocol is in a sense more simplified, this make it less likely for administrators and developers to misconfigure the protocol. </p>
+
+
+</div>
+
+<br /><br />
+<hr />
+
+<div class="row clearfix">
+  <div class="large-6 columns">
+	<div class="text-left" style="padding:15px 0px;">
+		
+	        <a href="15136683515000.html"  title="Previous Post: Inevitable Comparison: TCP vs UDP">&laquo; Inevitable Comparison: TCP vs UDP</a>
+	    
+	</div>
+  </div>
+  <div class="large-6 columns">
+	<div class="text-right" style="padding:15px 0px;">
+		
+	        <a href="15136677588220.html" 
+	        title="Next Post: Advanced Materials Through AI & Computational Materials Science">Advanced Materials Through AI & Computational Materials Science &raquo;</a>
+	    
+	</div>
+  </div>
+</div>
+
+<div class="row">
+<div style="padding:0px 0.93em;" class="share-comments">
+
+</div>
+</div>
+<script type="text/javascript">
+	$(function(){
+		var currentURL = '15136685483165.html';
+		$('#side-nav a').each(function(){
+			if($(this).attr('href') == currentURL){
+				$(this).parent().addClass('active');
+			}
+		});
+	});
+</script>  
+</div></div>
+
+
+<div class="page-bottom">
+  <div class="row">
+  <hr />
+  <div class="small-9 columns">
+  <p class="copyright">Copyright &copy; 2015
+Powered by <a target="_blank" href="http://www.mweb.im">MWeb</a>,&nbsp; 
+Theme used <a target="_blank" href="http://github.com">GitHub CSS</a>.</p>
+  </div>
+  <div class="small-3 columns">
+  <p class="copyright text-right"><a href="#header">TOP</a></p>
+  </div>
+   
+  </div>
+</div>
+
+        </section>
+      </div>
+    </div>
+    
+    
+    <script src="asset/js/foundation.min.js"></script>
+    <script src="asset/js/foundation/foundation.offcanvas.js"></script>
+    <script>
+      $(document).foundation();
+
+     
+    </script>
+    <script src="asset/chart/all-min.js"></script><script type="text/javascript">$(function(){    var mwebii=0;    var mwebChartEleId = 'mweb-chart-ele-';    $('pre>code').each(function(){        mwebii++;        var eleiid = mwebChartEleId+mwebii;        if($(this).hasClass('language-sequence')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = Diagram.parse($(this).text());            diagram.drawSVG(eleiid,{theme: 'simple'});        }else if($(this).hasClass('language-flow')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = flowchart.parse($(this).text());            diagram.drawSVG(eleiid);        }    });});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({TeX: { equationNumbers: { autoNumber: "AMS" } }});</script>
+
+  </body>
+</html>
