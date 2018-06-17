@@ -118,6 +118,158 @@
 		<div class="markdown-body home-categories">
 		
 			<div class="article">
+                <a class="clearlink" href="15136691816848.html">
+                
+                  <h1>Drive Headless Chromium with Python3</h1>
+                  <div class="a-content">
+                      
+                      <div class="a-content-text">
+                        
+                        	<h1 id="toc_0">Browser Automation</h1>
+
+<p>Before we dive into any code, let’s talk about what a headless browser is and why it’s useful. In short, headless browsers are web browsers without a graphical user interface (GUI) and are usually controlled programmatically or via a command-line interface.  </p>
+
+<p>One of the many use cases for headless browsers is automating usability testing or testing browser interactions. If you’re trying to check how a page may render in a different browser or confirm that page elements are present after a user initiates a certain workflow, using a headless browser can provide a lot of assistance. In addition to this, traditional web-oriented tasks like web scraping can be difficult to do if the content is rendered dynamically (say, via Javascript). Using a headless browser allows easy access to this content because the content is rendered exactly as it would be in a full browser.  </p>
+
+<h1 id="toc_1">Headless Chrome and Python</h1>
+
+<h2 id="toc_2">Going Headless!</h2>
+
+<h3 id="toc_3">Setup</h3>
+
+<p>Before we get started, we need to install Chromium and download the latest ChromeDriver.</p>
+
+<p>Next, let’s make a folder that will contain all of our files:  </p>
+
+<pre><code>mkdir going_headless
+#Now we can move the ChromeDriver into the directory that we just made:
+mv Downloads/chromedriver going_headless/
+</code></pre>
+
+<p>Since we are using Selenium with Python, it’s a good idea to make a Python virtual environment. I use virtualenv, so if you use another virtual environment manager, the commands may be different.  </p>
+
+<pre><code>$ cd going_headless &amp;&amp; virtualenv -p python3 env  
+$ source env/bin/activate
+</code></pre>
+
+<p>The next thing we need to do is install Selenium. If you’re not familiar with Selenium, it’s a suite of tools that allows developers to programmatically drive web browsers. It has language bindings for Java, C#, Ruby, Javascript (Node), and Python. To install the Selenium package for Python, we can run the following:  </p>
+
+<pre><code>pip3 install selenium  
+</code></pre>
+
+<h3 id="toc_4">Example</h3>
+
+<p>Now that we’ve gotten all of that out of the way, let’s get to the fun part. Our goal is to write a script that searches for my name “Hamples” on back.re, and checks that a recent article I wrote about Android security is listed in the results. If you’ve followed the instructions above, you can use the headless version of Chromium with Selenium like so:  </p>
+
+<pre><code>import os  
+from selenium import webdriver  
+from selenium.webdriver.common.keys import Keys  
+from selenium.webdriver.chrome.options import Options`  
+
+`chrome_options = Options()  
+chrome_options.add_argument(&quot;--headless&quot;)  
+chrome_options.binary_location = &#39;/Applications/Google Chromium.app/Contents/MacOS/Google Chromium&#39;`    
+
+`driver = webdriver.Chrome(executable_path=os.path.abspath(“chromedriver&quot;),   chrome_options=chrome_options)  
+driver.get(&quot;https://back.re&quot;)`  
+
+`magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
+if magnifying_glass.is_displayed():  
+  magnifying_glass.click()  
+else:  
+  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
+  menu_button.click()`  
+
+`search_field = driver.find_element_by_id(&quot;site-search&quot;)  
+search_field.clear()  
+search_field.send_keys(&quot;Hamples&quot;)  
+search_field.send_keys(Keys.RETURN)  
+assert &quot;Nothing...&quot; in driver.page_source   driver.close()` 
+</code></pre>
+
+<h3 id="toc_5">Example Explained</h3>
+
+<p>The driver.get function will be used navigate to the specified URL.</p>
+
+<pre><code>driver.get(&quot;https://back.re&quot;)
+</code></pre>
+
+<p>The back.re website is responsive, so we have to handle different conditions. As a result, we check to see if the expected search button is displayed. If it isn’t, we click the menu button to enter our search term.  </p>
+
+<pre><code>magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
+if magnifying_glass.is_displayed():  
+  magnifying_glass.click()  
+else:  
+  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
+  menu_button.click()  
+</code></pre>
+
+<p>Now we clear the search field, search for my name, and send the RETURN key to the drive.  </p>
+
+<pre><code>search_field = driver.find_element_by_id(&quot;site-search&quot;)  
+search_field.clear()  
+search_field.send_keys(&quot;Olabode&quot;)  
+search_field.send_keys(Keys.RETURN)
+</code></pre>
+
+<p>We check to make sure that the blog post title from one of my most recent posts is in the page’s source.  </p>
+
+<pre><code>assert &quot;Nothing...&quot; in driver.page_source
+</code></pre>
+
+<p>And finally, we close the browser.</p>
+
+<p><code>driver.close()</code>.</p>
+
+<h2 id="toc_6">Benchmarks</h2>
+
+<h3 id="toc_7">Head to Headless</h3>
+
+<p>So, it’s cool that we can now control Chrome using Selenium and Python without having to see a browser window, but we are more interested in the performance benefits we talked about earlier. Using the same script above, we profiled the time it took to complete the tasks, peak memory usage, and CPU percentage. We polled CPU and memory usage with psutil and measured the time for task completion using timeit.  </p>
+
+<p>For our small script, there were very small differences in the amount of time taken to complete the task (4.3%), memory usage (.5%), and CPU percentage (5.2%). While the gains in our example were very minimal, these gains would prove to be beneficial in a test suite with dozens of tests.  </p>
+
+<h1 id="toc_8">Resources</h1>
+
+<p>Chrome Links:  </p>
+
+<ul>
+<li><a href="https://www.chromium.org/getting-involved/download-chromium">Chromium</a></li>
+<li><a href="https://sites.google.com/a/chromium.org/chromedriver/downloads">Chrome Drive</a></li>
+<li><a href="https://chromedevtools.github.io/devtools-protocol/">DevTools API</a></li>
+</ul>
+
+<p>Selenium Links:  </p>
+
+<ul>
+<li><a href="https://www.seleniumhq.org/">Selenium HQ</a></li>
+<li><a href="https://selenium-python.readthedocs.io/">Python package</a></li>
+</ul>
+
+                        
+                      </div>
+                  </div>
+                </a>
+                <div class="read-more clearfix">
+                  <div class="more-left left">
+                  
+                    <span class="date">2015/6/19</span>
+                    <span>posted in&nbsp;</span> 
+          				  
+          					    <span class="posted-in"><a href='Network.html'>Network</a></span>
+          				   
+                  </div>
+                  <div class="more-right right">
+                  <span class="comments">
+                      
+
+                       
+                  </span>
+                  </div>
+                </div>
+              </div><!-- article -->
+        
+			<div class="article">
                 <a class="clearlink" href="hako.html">
                 
                   <h1>質問箱</h1>
@@ -227,6 +379,12 @@
 	      
 		      
 			      <li class="post">
+			        <a href="Review-Toradora(%E3%81%A8%E3%82%89%E3%83%89%E3%83%A9!)%20-%20the%20Best%20Romantic%20Comedy.html">Review: Toradora(とらドラ!) - the Best Romantic Comedy</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
 			        <a href="15255378723707.html">AND (Average Network Delay) and Queuing Theory Basics</a>
 			      </li>
 		     
@@ -250,10 +408,6 @@
 		     
 		  
 		      
-			      <li class="post">
-			        <a href="15139994534279.html">BitTorrent Traffic Detection with Deep Flow Inspection</a>
-			      </li>
-		     
 		  
 		      
 		  

@@ -118,6 +118,75 @@
 		<div class="markdown-body home-categories">
 		
 			<div class="article">
+                <a class="clearlink" href="15147262575972.html">
+                
+                  <h1>Difference between OpenVZ and LXC</h1>
+                  <div class="a-content">
+                      
+                      <div class="a-content-text">
+                        
+                        	<h2 id="toc_0">Background: What’s a container?</h2>
+
+<p>Containers have been around for over 15 years, so why is there an influx of attention for containers? As compute hardware architectures become more elastic, potent, and dense, it becomes possible to run many applications at scale while lowering TCO, eliminating the redundant Kernel and Guest OS code typically used in a hypervisor-based deployment. This is attractive enough but also has benefits such as eliminating performance penalties, increase visibility and decrease difficulty of debug and management.</p>
+
+<p>Because containers share the host kernel, binaries and libraries, can be packed even denser than typical hypervisor environments can pack VM’s.</p>
+
+<h2 id="toc_1">OpenVZ</h2>
+
+<p>OpenVZ is a Linux container solution. It was first released in 2005 by SWSoft, now known as Parallels. Though connected to a private, proprietary company, OpenVZ is open source and available for free.</p>
+
+<p>The previously mentioned container projects have been related to BSD. One fundamental difference between BSD and Linux is that Linux is technically just a kernel. All of the tools that make Linux functional are supplemental and from different projects. For example, the chroot command in Ubuntu Linux comes from the GNU coreutils project.</p>
+
+<p>This distinction between BSD and Linux is quite important in the case of OpenVZ. Because containers require kernel level access, the container code needs to be integrated into the kernel. OpenVZ only released its code as a set of patches and custom-compiled Linux kernels they initially never bothered to get their code into the official Linux kernel.</p>
+
+<p>As explained in a recent OpenVZ blog entry, this was a mistake recognized way back in 2005, and the OpenVZ team has been working to get their code integrated into the main Linux kernel since then. This can sometimes be a very slow and painful process. The Xen project went through the same scenario.</p>
+
+<p>OpenVZ has never really gained widespread acceptance in the Linux community. This is unfortunate since it is a very robust project with a large amount of features.</p>
+
+<h1 id="toc_2">LXC</h1>
+
+<p>Finally, there is LXC. Well, before we get into LXC, let us talk about Linux Namespaces. A namespace is another term for segregation. Items in different namespaces are unable to collide or conflict with each other. Chroot can be thought of as a simple filesystem namespace.</p>
+
+<p>As we have seen with all the other container projects, they implement features beyond filesystem segregation: users, processes, and the network are all also segregated.</p>
+
+<p>Starting in 2001, the Linux kernel began supporting a series of namespaces. The first was mount namespaces, which can be thought of as an enhanced filesystem namespace. Since then, Linux has added support for UTS, IPC, PID, user, and network namespaces. This article goes into great detail about each of them.</p>
+
+<p>Next, a quick mention about control groups otherwise known as cgroups. Cgroups limit the amount of resources a certain process can use. For example, a process could be limited to use just 50% of the total CPU on the server.</p>
+
+<p>Between namespaces and cgroups, the Linux kernel has everything it needs to support a modern container system. And that is exactly what LXC is a collection of utilities that interact with namespaces and cgroups.</p>
+
+<p>So, since LXC uses features native to the Linux kernel, this should make it a better choice over OpenVZ, right? I guess that depends on one&#39;s opinion of those features.</p>
+
+<p>The Linux namespace and cgroup code is still in development. For example, user namespaces were only finalized a few months ago. Shortly after, they were found to be heavily exploitable.</p>
+
+<p>Security in general is a very subjective and relational topic: what one person is paranoid of can be of no matter to another person. Security has always been a hot topic with LXC. Here are several different articles on the subject.</p>
+
+<p>This part of the series summarized various existing container solutions. You might have noticed the added detail for the Linux-based solutions especially LXC.</p>
+
+                        
+                      </div>
+                  </div>
+                </a>
+                <div class="read-more clearfix">
+                  <div class="more-left left">
+                  
+                    <span class="date">2017/12/31</span>
+                    <span>posted in&nbsp;</span> 
+          				  
+          					    <span class="posted-in"><a href='Network.html'>Network</a></span>
+          				   
+                  </div>
+                  <div class="more-right right">
+                  <span class="comments">
+                      
+
+                       
+                  </span>
+                  </div>
+                </div>
+              </div><!-- article -->
+        
+			<div class="article">
                 <a class="clearlink" href="15139994534279.html">
                 
                   <h1>BitTorrent Traffic Detection with Deep Flow Inspection</h1>
@@ -410,53 +479,6 @@ Taken the best features of parallel implementations of quantum chemistry methods
                 </div>
               </div><!-- article -->
         
-			<div class="article">
-                <a class="clearlink" href="15136677588220.html">
-                
-                  <h1>Advanced Materials Through AI & Computational Materials Science</h1>
-                  <div class="a-content">
-                      
-                      <div class="a-content-text">
-                        
-                        	<p>A recent <a href="https://www.nature.com/news/can-artificial-intelligence-create-the-next-wonder-material-1.19850">Nature article</a> examines how materials researchers are using artificial intelligence to make quantum-mechanical calculations in only a few seconds that once took supercomputers hours to complete.  </p>
-
-<p>These computer modeling and machine-learning techniques are generating enormous libraries of materials candidates. Researchers hope that this approach will produce a giant leap in the speed and usefulness of materials discovery. British materials scientist Neil Alford observes, “We are now seeing a real convergence of what experimentalists want and what theorists can deliver.”  </p>
-
-<p>The most promising results so far have been achieved with lithium compounds, used in batteries and other applications..  </p>
-
-<p>The Nature article also argues that “artificial intelligence will help researchers comb through vast numbers of materials to find just the one they need for the application at hand.” The standard process starts with researchers applying machine learning to lab data and computer modeling in order to extract common patterns and predict new materials. Researchers then look for a material with specific properties and pass along their findings to chemists, who try to produce the theoretical material for testing.  </p>
-
-<p>Personally, I think huge opportunities are available from these types of materials databases — the potential is almost limitless. The advances made so far remind me of the robotic discovery efforts at Dow, the advances made by Bristol-Myers Squibb and other pharmaceutical companies, and recent virus discoveries, such as the ones made by Angie Belcher’s group. These discoveries have resulted in everything from catalysts for oxidative coupling of methane to battery electrode materials. These types of efforts are the physical analog to the computational approaches described in these material databases.  </p>
-
-<p>Transforming computer predictions to real-world technologies, however, is difficult. Existing databases include a small fraction of all the known materials and only a few possible ones. Researchers have also learned that data-driven discovery works well for some materials, but not for others. And even when researchers successfully isolate a material with potential, it can take years for chemists to synthesize it in a lab.  </p>
-
-<p>Despite these challenges, researchers remain confident that they will discover many useful materials that could lead to innovations in electronics, robotics, healthcare, and other fields. In my opinion, the key for researchers is to avoid the scattershot approach. If scientists can try everything, how do we decide where to focus our efforts? To focus the research there must still be brains behind the computational or robotic synthesis efforts. We need to ensure that we aren’t trying to boil the ocean.  </p>
-
-<p>I believe that success will require collaboration between different disciplines and groups. For example, people who understand the computational work may not completely understand the physical impact on materials. We must combine those two areas to provide meaningful information that can be used to impact physical materials. Information inside a computer is only useful if we can translate it to the physical world.  </p>
-
-                        
-                      </div>
-                  </div>
-                </a>
-                <div class="read-more clearfix">
-                  <div class="more-left left">
-                  
-                    <span class="date">2017/5/19</span>
-                    <span>posted in&nbsp;</span> 
-          				  
-          					    <span class="posted-in"><a href='Material.html'>Material</a></span>
-          				   
-                  </div>
-                  <div class="more-right right">
-                  <span class="comments">
-                      
-
-                       
-                  </span>
-                  </div>
-                </div>
-              </div><!-- article -->
-        
               
 
 
@@ -534,6 +556,12 @@ Taken the best features of parallel implementations of quantum chemistry methods
 	      
 		      
 			      <li class="post">
+			        <a href="Review-Toradora(%E3%81%A8%E3%82%89%E3%83%89%E3%83%A9!)%20-%20the%20Best%20Romantic%20Comedy.html">Review: Toradora(とらドラ!) - the Best Romantic Comedy</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
 			        <a href="15255378723707.html">AND (Average Network Delay) and Queuing Theory Basics</a>
 			      </li>
 		     
@@ -557,10 +585,6 @@ Taken the best features of parallel implementations of quantum chemistry methods
 		     
 		  
 		      
-			      <li class="post">
-			        <a href="15139994534279.html">BitTorrent Traffic Detection with Deep Flow Inspection</a>
-			      </li>
-		     
 		  
 		      
 		  
