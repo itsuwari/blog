@@ -1,0 +1,1254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Fuuko's Lab]]></title>
+  <link href="https://fuuko.net/atom.xml" rel="self"/>
+  <link href="https://fuuko.net/"/>
+  <updated>2018-05-28T14:01:16+02:00</updated>
+  <id>https://fuuko.net/</id>
+  <author>
+    <name><![CDATA[]]></name>
+    
+  </author>
+  <generator uri="http://www.mweb.im/">MWeb</generator>
+  
+  <entry>
+    <title type="html"><![CDATA[AND (Average Network Delay) and Queuing Theory Basics]]></title>
+    <link href="https://fuuko.net/15255378723707.html"/>
+    <updated>2018-05-05T18:31:12+02:00</updated>
+    <id>https://fuuko.net/15255378723707.html</id>
+    <content type="html"><![CDATA[
+<p>Recently I was looking at the Linear programming formulations of Traffic engineering problems and one of the problems is to find the path with the goal to minimize the Average network delay. Which got me thinking that for topology design related problems, how can I calculate the Average network delay? As you can guess, I&#39;m going to introduce the model we implemented in Hokkaido research network.  </p>
+
+<h2 id="toc_0">Before starting few things to keep in mind:</h2>
+
+<ul>
+<li>A background in Probability theory, particularly familiarity with Poisson and Exponential distribution will help. There is no way I can do the justice in explaining all the basics without distracting from the main goal.</li>
+<li>I will involve Queuing theory and the Math involved in Queuing theory gets complicated very fast, especially for an average guy like me. What we are going to look at is the most basic form.</li>
+<li>Please be aware that whatever we cover here only allows us to measure the first order approximation of what happens in real life and it is good for use cases like topology design but not for measuring the exact state of a network for operational purposes.</li>
+<li>As usual disclaimer, I am going to take some luxuries while explaining to keep things simple, so it’s possible that some statements may not be mathematically accurate.</li>
+</ul>
+
+<!--more-->
+
+<h2 id="toc_1">Factors contributing to Packet Delay:</h2>
+
+<p>There are typically four factors which contribute to a packet delay in a network. Out of the Four factors, queuing delay is the one which is most interesting and most complicated.</p>
+
+<p>Total Delay = <span style="color: #993300">Processing Delay</span> + <span style="color: #0000ff">Transmission Delay</span> + <span style="color: #008000">Propagation Delay</span> +<span style="color: #ff6600"> <strong>Queuing Delay</strong></span></p>
+
+<p>Queuing delay is the time spent by the packet sitting in a queue waiting to be transmitted onto the link. The amount of time it needs to wait depends on the size of the Queue. If the Queue is empty, then it transmitted immediately, but if it’s sitting behind other packets, then it needs to wait for the packets in front to be transmitted first (common sense).  </p>
+
+<p>In order to understand more about Queueing delay, we have to take a step back and look at the basic of Queuing theory first. Then we will look at the simple Queueing model, derivation and then see how we can use that to calculate the Average Network delay.  </p>
+
+<h2 id="toc_2">What is Queuing Theory?</h2>
+
+<p>Queuing theory is basically the mathematical study of waiting lines. We see Queues everyday in our life, whether it’s a line in Starbucks, queues of vehicles on the road, packets in Data Networks, Grocery line etc.  </p>
+
+<p>Typically, a Queue is formed when people arrive at a place to get some kind of service like getting coffee, grocery, medical help etc. In Queueing theory, we create a model of the Queuing system so that we can predict the performance of the system for parameters like:<br/><br/>
+* Average number of customers waiting in a line (Average Queue length).<br/>
+* Average time a customer spends waiting in a line.<br/>
+* How utilized servers serve the queues.</p>
+
+<p>Queuing theory has been used extensively in Operations Research. As a matter of fact, some of the best lectures I have found on Queuing theory were taught as part of Operations research curriculum.  </p>
+
+<h3 id="toc_3">Components of a Queuing System:</h3>
+
+<p>Below is a representation of various components in a Queueing systems. </p>
+
+<p><img src="media/15255378723707/15255383727178.jpg" alt=""/></p>
+
+<p>At a basic level, a Queuing system consists of one or more Servers serving the customers, One or more Queues in which Customers will come and line-up. The length of these Queues can be assumed infinite or finite length to hold customers waiting for service.  </p>
+
+<ul>
+<li>Arrival Process: Represents the Customer arrival pattern. We will look more into the details.</li>
+<li>Service Pattern: how many servers we have and the speed of the Service which is called Service Rate.</li>
+<li>Queue Length: How many people can a Queuing system hold. 10, 20, 200, infinite?</li>
+<li>Queue Discipline: This represents if the queue will be served in First come First serve (FCFS), Last come First Serve (LCFS), Random etc. manner. Typically, it’s FCFS and that is what we will assume for the rest of the article.</li>
+</ul>
+
+<h3 id="toc_4">Customer Arrival Pattern (Arrival Process)</h3>
+
+<p>Customer arrival pattern basically specifies how customers are arriving in the Queuing system. For instance, they can come either in a scheduled manner or they can be totally random. Few parameters we considered here are:</p>
+
+<ul>
+<li>Arrival Rate: This represents the average rate at which the customers are coming. For instance, let’s say we have a grocery store and we know that on an average, there are 5 customers walks into the store every hour. So the Average rate is 5 customers per hour and it is typically represented by λ(lambda).</li>
+<li>Inter-arrival time: This is the time between the customer arrivals.<br/>
+<img src="media/15255378723707/15255384988084.jpg" alt=""/><br/>
+If we know that the Customers come in a scheduled manner or follow some sort of pattern, then things would be easy. For instance, going back to our grocery store example, let’s say we are trying to figure out how many cash registers we have to put to handle the customers. We know that on an average 5 customers come every hour and let’s assume that it takes on an average 10 mins to service a single customer which means our Service Rate is 6 customers per hour.</li>
+</ul>
+
+<p>Now If 5 customers walk into the store at a gap of 12 mins each, then there won’t be any queue formed because by the time next customer comes, you would have serviced the previous customer and life would be just good with a single counter. But unfortunately life is not that simple, they all can just show up at the same time and that will form a Queue. So If your service time is too long then you have the risk of them walking out.      if they wait for too long, the possibility of them to stop waiting/walk away will be higher.</p>
+
+<p>So, this is the reason why we have built some sort of intuition on why we need to study Queues. Now in our scope, we will assume that Customers arrival pattern is Random in nature.</p>
+
+<p>(Similarly, later we will assume that the packet arrival in Networks is also a Random even though it may not be entirely true in reality).</p>
+
+<p>We will model the customer arrival pattern as a Poisson process. If you don’t know what a Poisson process, I am just going to mention some of the key properties briefly.</p>
+
+<h4 id="toc_5">Poisson Arrival Model:</h4>
+
+<p>A Poisson process is typically used to model scenarios where we are counting the occurrences of certain events that appear to happen at a certain rate, but completely at random. For example, going back to our grocery store example, we know that average customer arrival rate is 5 but we don’t know when they will show up at the store. Poisson process is perfect to model this kind of behavior.<br/>
+<img src="media/15255378723707/15255386155786.jpg" alt=""/><br/>
+In Poisson process the rate “λ” represents the average number of events per unit time. The Probability of “n” arrivals happening in “t” units of time can be given by: \[ P_n(t)=\frac{(\lambda t)^n}{n!}e^{-\lambda t} \]</p>
+
+<p>I am not going to derive the above formula, but essentially it can help you in answering questions like, give me the probability of 8 customers arriving in our grocery shop in an hour given that we know on an average 5 customers per hour(λ=5) walk into the store.</p>
+
+<p>The inter-arrival times of a Poisson process is independent and it follows an <strong>exponential distribution</strong></p>
+
+<p>Again, we are going to skip the proof on how a Poisson process inter arrival times are exponential distribution, but it’s actually pretty simple (though just by saying that may not really help).</p>
+
+<p>Exponential distribution has one key property which is Memoryless. Meaning the past doesn’t affect the Future. It’s also called forgetfulness property and simple examples would be like flipping a Coin. I think I also exhibit symptoms of Memoryless.  </p>
+
+<h2 id="toc_6">Queuing Models Taxonomy:</h2>
+
+<p>So in Queuing theory, we use certain kind of notation (Kendal’s notation) to refer to various types of Queuing system. The format of the notation is below<br/><br/>
+ <strong>A / B / s / K / n / D</strong>  </p>
+
+<ul>
+<li>A – Arrival Process, Inter arrival times distribution. It can be either of these
+
+<ul>
+<li>M = Represents Markovian or Memory less property like Poisson process.</li>
+<li>D = deterministic (Constant)</li>
+<li>G = General distribution</li>
+</ul></li>
+<li>B – Service distribution. It can be either of these
+
+<ul>
+<li>M = Represents Markovian or Memory less property like Exponential service time.</li>
+<li>D = deterministic (Constant)</li>
+<li>G = General distribution</li>
+</ul></li>
+<li>s – number of servers</li>
+<li>K – system’s capacity (e.g. maximum number of customers in the system including the one being served). Typically, we omit this when it’s infinity.</li>
+<li>n – population size. Usually we consider Infinity for this.</li>
+<li>D – Queue Discipline like FIFO, LIFO, Random etc.<br/></li>
+</ul>
+
+<p>For the majority, we only use the first three i.e. “A / B / s” to represent a Queuing system. Below are few Queuing type examples.<br/><br/>
+M/M/1: Infinity<br/><br/>
+<img src="media/15255378723707/15255389466749.jpg" alt=""/>  </p>
+
+<ul>
+<li><strong>Arrival Process</strong>: The First “M” represents memory less property i.e. Poisson arrival process. The customer arrival rate is represented by λ.</li>
+<li><strong>Service Distribution</strong>: The Second “M” represents memory less property i.e. exponential service time. The service rate is represented by “µ” and the mean of Exponential distribution is given by 1/ µ.</li>
+<li><strong>1</strong>: represents the number of server.</li>
+<li><strong>Infinity</strong>: Represents that the Queue length can be infinite. Off course we know that in real world this cannot be true.<br/></li>
+</ul>
+
+<p><strong>M/M/c: 10</strong><br/><br/>
+<img src="media/15255378723707/15255390021410.jpg" alt=""/><br/>
+* <strong>Arrival Process</strong>: “M” represents memory less i.e. Poisson Process<br/>
+* <strong>Service Distribution</strong>: “M” represents memory less i.e. exponential service time<br/>
+* <strong>c</strong>: Represents the number of Servers like 2 in our case.<br/>
+* <strong>10</strong>: Represents the maximum length of the Queue.  </p>
+
+<p>Other examples of Queuing system could be like M/G/1, M/D/1 etc.  </p>
+
+<p>Out of all the different types of Queuing system, M/M/1 is the simplest Queuing model. We can model the output link of a router as an M/M/1 Queue which is actually what we will do later in the example.<br/><br/>
+<img src="media/15255378723707/15255390560022.jpg" alt=""/></p>
+
+<h3 id="toc_7">Properties of a Queuing System:</h3>
+
+<p>At this point we know that in a Queuing system we have Customer Arrival rate (λ) which tells us how fast the customers are coming in and Service rate (µ) which is the average time taken to service each customer. A good Queuing system has a property that service Rate (µ) is always greater than the customer arrival Rate (λ) and the ratio (λ/µ) is represented by “ρ”. </p>
+
+<p>\[\rho = \frac{Customer\ Arrival\ Rate(\lambda)}{Service\ Rate}&lt;1\]</p>
+
+<p>I think the reasoning for this is pretty intuitive because if that is not the case, then the Queue will keep growing as customers will arrive faster than a Queue can be served.  </p>
+
+<p>Obviously the next question comes to mind is why we will have a Queue to begin with if Service Rate is higher than the Customer arrival rate? We should know this because we addressed this in our earlier Grocery example i.e. Customer inter-arrival pattern is random.</p>
+
+<p>In the below figure, we have a service rate of 6 per hour and arrival rate of 5 per hour and we will form Queue for bottom two illustrations where customer arrival pattern is random.<br/><br/>
+<img src="media/15255378723707/15255391356971.jpg" alt=""/></p>
+
+<p>We also make another important assumption that during a very small interval (let’s call it “h”), only one event takes place. Let’s say the current time is “t” then in time “t+h”, either a customer will arrive in the Queue or a Customer is Served. We cannot have both Customer arrival and Customer getting Served in the same time interval “h”. Essentially “h” is so small that only one thing happens (Arrival or Service).  </p>
+
+<p>Alright, so what kind of questions we can answer with the help of Queuing Theory?</p>
+
+<p>Assuming that the system is in a steady state, we can answer things like what is the probability that a system has 0, 1, 2……… to infinity customers, in the Queue? The number of people in the Queue can go either to “Infinity” or to “N” where N is the maximum size a Queue can hold depending on the type of Queuing model we are using like M/M/1: Infinity vs M/M/1: n.</p>
+
+<p>Typically, we are interested in getting the value for below parameters for a given Queueing system.<br/>
+w = numbers of customers waiting is queue<br/><br/>
+q = Total number of customers in the system<br/><br/>
+\(T_s\) = Denote the service time.<br/><br/>
+\(T_w\) = waiting time in Queue <br/>
+\(T_q\) = denote the total turn around time (Waiting time + Service Time) (\(T_q = T_w + T_s\))  </p>
+
+<p><img src="media/15255378723707/15255391737073.jpg" alt=""/>  </p>
+
+<h3 id="toc_8">Basic queuing relationships:</h3>
+
+<p>Little’s Law gives us below two relationships between the parameters for any steady state queuing system:<br/><br/>
+\(q=\lambda T_q\) (equation 1)<br/><br/>
+\(w = \lambda T_w\) (equation 2)  </p>
+
+<p><img src="media/15255378723707/15255392254162.jpg" alt=""/></p>
+
+<p>In case it’s not intuitive to you, think about the basic relationship between Distance, Speed and Time, which we all are familiar with i.e.  </p>
+
+<blockquote>
+<p><strong>Distance = Speed x Time</strong>  </p>
+</blockquote>
+
+<p>The distance covered is a product of the Speed an object is moving and Time spent. Now assume that the arrival rate (λ) is the Speed and the waiting time is the time spend. This will give us the length. We are not going to prove Little’s law, but if you have an interest, the proof is widely available in lots of text books.</p>
+
+<h3 id="toc_9">Relationship between Total Turnaround, Queuing and Service Times</h3>
+
+<p>In a queuing system, a customer’s time is either spent waiting for service or getting service. Thus, we get this relationship:<br/>
+\[T_q = T_w + T_s\]<br/>
+Multiplying the above equation by the arrival rate \(\lambda\) and applying Little&#39;s formula, we get<br/>
+\[\lambda T_q = \lambda T_w + \lambda T_s \]<br/>
+From earlier equation 1 and 2 we know that \(1 = \lambda T/q\) and \(w = \lambda T_w\), so \(q = w+ \lambda T_s\)<br/><br/>
+Where \(T_s=\frac{1}{\mu}\ and\ \rho = \frac{\lambda}{\mu } \)<br/><br/>
+so we see<br/>
+\[q = w+\frac{\lambda}{\mu } \rightarrow w+\rho \]</p>
+
+<h2 id="toc_10">Analysis of an M/M/1 Queuing System</h2>
+
+<p>It’s time for us to derive some equations. An M/M/1 queuing system is a single-queue single-server queuing system in which arrivals are Poisson and service time is exponential. The notation M/M/1 describes the “queue” in the system as having a Markovian arrival process (i.e. Poisson) and a Markovian (i.e. Exponential) service discipline with 1 server.</p>
+
+<h3 id="toc_11">Probability of Arrival and Departure</h3>
+
+<p>So as we said earlier, assume a very small time interval of length “h” and in this time interval (h), only one event happens either an arrival or a departure (customer is serviced).</p>
+
+<p>Since the rate of arrival is λ per unit time, then we can say that rate of arrival per interval “h” is “λh”. To think about this intuitively, let’s say we have an arrival rate of λ = 2 per second and h=5 second then arrival rate per 5 second is 10 (5 x 2).</p>
+
+<p>We know that the probability density of the Poisson distribution is:<br/>
+\(P_n = (\frac{\lambda^n}{n!}e^{- \lambda})\) where n = 0,1,2 ...  </p>
+
+<p>Given that the rate of arrival per interval h is λh, the probability of “n” arrivals per interval h can be given as<br/><br/>
+\(P_n(h) = (\frac{(\lambda h)^n}{n!}e^{- \lambda h})\) where n = 0,1,2 ...  </p>
+
+<p>According to the above, the probability that there will be no arrivals (n=0) during a given interval h is  thus, the probability that at least one arrival (i.e. a birth) will occur is:<br/>
+\[ P(At\ least\  one\ arrival)=1-P(No\ arrivals)\Rightarrow 1-e^{-\lambda h} \Rightarrow 1 - (1- \lambda h + \frac{( \lambda h )^2}{2!}+ \frac{( \lambda h )^3}{3!}) \]</p>
+
+<p>Since we are assuming that “h” is a very small period, we can ignore the higher order terms because they become negligible (intuition: If \(h = 0.001\) then \(h^2 = 0.000001\) which is really small ) which will leave us with  λh.</p>
+
+<p>\[P (arrival) = λh\]</p>
+
+<p>Similarly, we can show that the probability that a customer will leave the system (i.e. a customer for whom the service was finished) given that somebody is in the first position in the system.</p>
+
+<p>\[P (departure) = µh\]</p>
+
+<h3 id="toc_12">State (rate) transition diagram for M/M/1</h3>
+
+<p>Consider a M/M/1 system at steady state (i.e. Equilibrium). Such a system will have a variable number of customers. In particular, at any point of time, a customer may be added to the system through an arrival event, or a customer may be removed from the system due to a departure event.  </p>
+
+<p>Consider the state of the system when exactly &quot;n&quot; customers are in the system. We denote such a state by \(S_n\). If we can figure out how to calculate the generalized probability \(S_n\) that the system will have &quot;n&quot; customers in the Queue. This will allow us to plug any number for n=0,1,2... and get the probability of how many customers are in the Queue.  </p>
+
+<p>Now assume that the system at a given instant is in state \(S_n\). What factors can lead the system to be in such a state \(S_n\) ?  </p>
+
+<p>There are three ways which will result into the system moving into state \(S_n\)<br/>
+1. The system was in the state \(S_{n-1}\) and arrival happened. The probability of that happening is \(\lambda h\). We derived that earlier.<br/>
+2. The system was in the state \(S_{n+1}\) and a departure happened because a customer was serviced. The probability of that happening is \(\mu h\).<br/>
+3. The system was in the state \(S_n\) and neither an arrival nor departure happened. The probability of that happening is \(1-(\lambda h + \mu h)\). (If the probability of arrival or departure happening is \(\lambda h+\mu h\) then not happening is \(1-(\lambda h + \mu h)\)).  </p>
+
+<p><img src="media/15255378723707/15255406029545.jpg" alt=""/></p>
+
+<p>The above diagram shows the transitions. Solid arrows denote the transitions that result into entering state \(S_n\). As you may have noticed that we did not consider the possibility of an arrival and a departure happening in the same interval &quot;h&quot;.</p>
+
+<p>From the above diagram, we can derive the following relationship:</p>
+
+<p>Probability of the system in state \(S_n\) = &quot;Probability that the system is in \(S_{n-1}\) and one arrival happens&quot; or &quot;Probability that the system is in \(S_{n+1}\) and one departure happens&quot; or &quot;Probability that the system is in \(S_{n}\) and no arrival or departure happens&quot;.  </p>
+
+<p>Mathematically we can write the above as<br/><br/>
+\[P(S_n)=\lambda h P(S_{n-1})+\mu h P(S_{n+1})+(1-(\lambda h + \mu h))P(S_n)\]<br/>
+After rearranging terms, we get<br/>
+\[\mu P(S_{n+1}) - \lambda P(S_{n-1})\]<br/>
+\[P(S_{n+1})=(1+\rho)P(S_n)-\rho P(S_{n-1})\ (Dividing \ by\ \mu and substituting\ \frac{\lambda}{\mu}=\rho)\]<br/>
+One thing to note is that for state \(S_0\) i.e. state when there are no customers (n=0) in the Queue is a special state as there is no that \(S_{0-1}\)</p>
+
+<p>With that consideration, we get following from above equations after removing \(S_{0-1}\) and also the fact that if there are 0 people in the Queue then we don&#39;t have to worry about the fact of something getting serviced as there are 0 people in the Queue. therefore,no one will be serviced if there is 0 people in the queue.<br/>
+\[P(S_0)=\mu h P(S_1)+(1-\lambda h)P(S_0)\]<br/>
+\[P(S_0)=\mu h P(S_1)+P(S_0)- \lambda h P(S_0)\]<br/>
+\[\lambda P(S_0) = \mu P(S_1)\]<br/>
+\[P(S_1)=(\frac{\lambda}{\mu})P(S_0) =&gt; \rho P(S_0)\]</p>
+
+<p>Now we have a basic relationship on how state \(S_1\) is dependent on state \(S_0\). Similarly, we can say that <br/>
+\[P(S_2)=\rho P(S_1) =&gt; \rho ^2 P(S_0)\]<br/>
+\[P(S_3)=\rho P(S_2) =&gt; \rho ^2 P(S_0)\]</p>
+
+<p>This can be generalized by saying<br/>
+\[P(S_n) = \rho ^ n P(S_0) \ \ \ \ \  (Equation 4)\]</p>
+
+<p>We see that how every state \(S_n\) can be expressed in terms of basic state \(S_0\). We also know that the overall probability of all the state must be added up to 1, we can say that<br/>
+\[P(S_0)+\rho ^ 1 P(S_0)+\rho ^ 2 P(S_0)+\rho ^ 3 P(S_0)+... = 1\]<br/>
+\[P(S_0)(1+\rho^1+\rho2+\rho^3+...)=1\]</p>
+
+<p>You can see how \((1+\rho^1+\rho2+\rho^3+...)\) is an infinite geometric series from which will get reduced to<br/>
+\[(1+\rho^1+\rho2+\rho^3+...)=\frac{1}{1-\rho} \ \ \ \ (Equation\ 5)\] <br/>
+Applying equation 5, we get<br/>
+\[<br/>
+P(S_0)\frac{1}{1-\rho} = 1 \\<br/>
+P(S_0)=1-\rho \ \ \ \ (Equation\ 6) <br/>
+\]<br/>
+Substituting \(P(S_0)\) results from equation 6 back into equation 4, we get<br/>
+\[<br/>
+P(S_n)= \rho^{n}(1-\rho) \ \ \  \ (Equation\ 7)<br/>
+\]</p>
+
+<h3 id="toc_13">Average number of customer in an M/M/1 System</h3>
+
+<p>Now we are ready to compute the average number of customers in an M/M/1 system. The total number of customers in the system (q) can be given by the sum of the number of customers and their respective probability.<br/><br/>
+\[q=\sum^{n=infinity}_{n=0}{nP(S_n)}\]<br/>
+Applying equation 4 and taking \(\rho P(S_0)\) out<br/>
+\[q=\sum^{n=infinity}_{n=0}{nP(S_n)}\rightarrow \sum^{n=infinity}_{n=0}{n \rho ^ n P(S_0)} \rightarrow \sum^{n=infinity}_{n=0}{n \rho ^ {n-1}}\]<br/>
+We know that from calculus that \(\frac{d}{d\rho}\rho ^ n = n \rho^{n-1} \) and applying sum rule<br/>
+\[<br/>
+q = \rho P(S_0)\sum^{n=infinity}_{n=0}\frac{d}{d\rho}\rho^n \rightarrow \rho P(S_0) \frac{d}{d\rho}\sum^{n=infinity}_{n=0}{\rho^n}<br/>
+\] <br/>
+We know that \(P(S_0) = 1 - \rho \) from equation 6, substituting that for \(P(S_0)\) and equation 5 for geometric series<br/>
+\[<br/>
+q = \rho P(S_0)\frac{d}{d\rho}\frac{1}{1-\rho} \rightarrow \rho(1-\rho)\frac{1}{(1-\rho)^2}<br/>
+\]<br/>
+We know that \(\rho=\frac{\lambda}{\mu}\), substituting that for \(\rho\) we get<br/><br/>
+\(q=\frac{\rho}{1-\rho} \rightarrow \frac{\lambda}{\mu- \lambda}\) (Equation 8)</p>
+
+<h3 id="toc_14">Average number of customers waiting for service in a M/M/1 system</h3>
+
+<p>We know that q = w + ρ. Thus<br/>
+\[W=q-p\rightarrow \frac{\rho}{1-\rho} - \rho \rightarrow \frac{\rho^2}{1-\rho}\]</p>
+
+<h3 id="toc_15">Average time in a M/M/1 system</h3>
+
+<p>Earlier we saw that using Little&#39;S formula  we can say \(q=\lambda T_q\) (Equation 1). Which means<br/>
+\[<br/>
+T_q = q/\lambda \rightarrow \frac{\lambda}{\mu-\lambda} \rightarrow \frac{1}{\mu- \lambda}<br/>
+\]<br/>
+by applying equation 8.<br/><br/>
+So now we have a way to calculate the average time a customer waits in an M/M/1 queuing system with infinite buffer. We could use this to figure out average delay which a packet may experience on a link by Modeling a Router (store and forward) as M/M/1 Queue.</p>
+
+<p>But the next question comes to mind is that in the real world we know that routers don’t have infinite buffers. In that case, if we want we could model Router’s with finite buffer as M/M/1/c Queuing system where  the “c” is the length of the buffers (or Queue size) and derive the equations for getting an average time for an M/M/1/c system.</p>
+
+<p>But before you think “Oh gosh another proof and formula”, it turns out that an Infinite buffer model is a good approximation of finite buffer systems so we will skip that.</p>
+
+<h3 id="toc_16">Networks of M/M/1 Queues:</h3>
+
+<p><img src="media/15255378723707/15255438811801.jpg" alt=""/></p>
+
+<p>Assuming that we are modeling Routers as an M/M/1 Queueing system, we know that every router is connected to each other (like Tandem Queues) where traffic enters multiple queues, exits multiple queues, traffic streams merge or split repeatedly. This fact presents the challenge that once packets have passed the first M/M/1 Queue, are there inter-arrivals still random on the next Queue or they become strongly correlated? Because if they are not random anymore then this will invalidate the Queueing models based on Poisson arrival.</p>
+
+<p>It turns out that a very smart person (Leonard Kleinrock) observed and resolved the problem by introducing the Klein rock independence assumption. It turns out due to the effect of multiple streams merging and splitting at hops, then it restores the Randomness of Inter arrival property, hence making assuming Poisson arrival for packets as a valid assumption.</p>
+
+<p>(Added a video link of him in References which I thought was fascinating. He did his PHD under Claude Shannon)</p>
+
+<h3 id="toc_17">Average Network Delay:</h3>
+
+<p>We can approximate average network delay of a network that consists of more than one link in which traffic feeds from one link into another, by assuming each link behaving as an independent M/M/1 system.  </p>
+
+<p>Consider, for link l=1,2,3...L in a network, the packet arrival rate at link is given by \(\lambda _ l\) which will is expressed in terms of packets per seconds(PPS). Assuming the link capacity is \(c_l\), we can find the service rate \(\mu_l\) for that link by \(\mu_l=\frac{c_l}{average\ packet\ size}\).</p>
+
+<p>For example, if the link is 1Mbps(1,000,000bps) and average packet size is 500bytes(4,000bits), this gives us the service rate \(\mu_l = \frac{1Mbps}{500bytes}=250pps\)</p>
+
+<p>Also assume that on that 1Mbps link we have 800kbps of traffic then we can say the arrival rate on that link \(\mu_l = \frac{Bandwidth}{average\ packet\ size}=\frac{800,000}{4,000}=200pps\)</p>
+
+<p>So we can derive the average number of packets \(N_l=\frac{\lambda_l}{\mu_l - \lambda_l}\) in a queue (equation 8).</p>
+
+<p>If we sum the average number of packets for all links, we get the average number of packets in the network.<br/>
+\[<br/>
+N=\sum^{L}_{l=1}{N_l}=\sum^{L}_{l=1}{\frac{\lambda_l}{\mu_l- \lambda_l}}<br/>
+\]</p>
+
+<p>Now if we know the total amount of the traffic or demand entering into the network, then let&#39;s call it H then by applying Little&#39;s law over the network we can say that \(N=HT\) (From equation 1).</p>
+
+<p>This give us<br/>
+\[<br/>
+T=\frac{N}{H}=(\frac{1}{h}\sum^{L}_{l=1}{\frac{\lambda_l}{\mu_l- \lambda_l}})<br/>
+\]</p>
+
+<h3 id="toc_18">Example:</h3>
+
+<p>Now let’s try to apply what all we have learned so far with an example. Assume that we have this network topology.</p>
+
+<p><img src="media/15255378723707/15255445537342.jpg" alt=""/></p>
+
+<p>All links are of 1 Gbps capacity for simplicity. In reality we can have a capacity matrix giving us the capacity of each link. We assume that the average packet size in this network is 600 Bytes (4800 bits).  </p>
+
+<p>We can derive the service rate for a link = \(\frac{Link\ capacity}{Avg\ Packet\ Size}=\frac{1,000,000,000}{4,800}=208,333 pps\)</p>
+
+<p>In our case this will be the Service Rate for every link as we are assuming same link capacity and average packet size. We also have the below Routing matrix for this topology which tells us how traffic is routed between the Nodes.</p>
+
+<p><strong>Routing Matrix:</strong>  </p>
+
+<p><img src="media/15255378723707/15255446516674.jpg" alt=""/></p>
+
+<p>We can look at the Routing Matrix and the Traffic Demand Matrix of the network to derive the aggregate demand for each link in the network. For Instance, from Routing matrix we know that the link “AB” will carry traffic for the demands for “AB”, “ABC”, “ABF” and “ABFD”.</p>
+
+<p>Let’s say we had a Traffic Demand matrix and after combining with the Routing matrix, we came up with the below Aggregate Traffic Demand matrix for the links, this gives us the Arrival rate for each link.</p>
+
+<p><strong>Aggregate Traffic in PPS(Mbps) derived from Routing table.</strong><br/><br/>
+<img src="media/15255378723707/15255446847256.jpg" alt=""/><br/>
+Total Arrival Rate is equal to the sum of the arrival rate on all the links which we get from the above table<br/><br/>
+\[\sum{\lambda_l} = 2,500,000\ pps\]<br/>
+To keep it simple, The below table shows the calculations only in one way like from Link A-&gt;B but not from B-&gt;A. Later we will just double the final numbers to account for the other direction.<br/><br/>
+<img src="media/15255378723707/15255447347725.jpg" alt=""/></p>
+
+<p>Average Network Delay where total Arrival Rate in the Network \(H=2,500,000pps\)<br/>
+\[T(Average\ Delay)=(\frac{1}{H})\sum^{L}{l=1}{\frac{\lambda_l}{\mu_l- \lambda_l}}=\frac{1}{2,500,000}\sum^{L}{l=1}{\frac{39 \times 2 }{2,500,000}}=31.2\mu\ sec\]</p>
+
+<h2 id="toc_19">Conclusion:</h2>
+
+<p>We started with the basic of Queuing theory, then we derived some equations for the key parameters for the M/M/1 Queueing system. Then we looked at how the M/M/1 Queuing system can be applied to Network and ended with an example.</p>
+
+<p>We could have just looked at the final formula without going through the derivation, but my goal is to show how it’s derived because that is always not stated clearly in books.It also helps in building an understanding of the assumptions behind derived equations. Once you have developed an understanding/intuition, I do not think you have to remember the details. I hope some of you will find this useful.  </p>
+
+<p>I was initially thinking of covering below questions but decided to leave it to you:</p>
+
+<ul>
+<li>Whether Poisson traffic is the right model for traffic arrival?</li>
+<li>Is M/M/1 Queuing system the right way to model the Routers? Or we should have looked at some Queuing systems like M/G/1 where service rate distribution is modeled as a generalized distribution?
+
+<ul>
+<li>If yes, then how can we find an average network delay in those cases.</li>
+</ul></li>
+</ul>
+
+<h2 id="toc_20">Useful links and References:</h2>
+
+<ul>
+<li>Khan Academy Poisson Process Introduction
+<ul>
+<li><a href="https://www.youtube.com/watch?v=3z-M6sbGIZ0">https://www.youtube.com/watch?v=3z-M6sbGIZ0</a></li>
+<li><a href="https://www.youtube.com/watch?v=Jkr4FSrNEVY">https://www.youtube.com/watch?v=Jkr4FSrNEVY</a></li>
+</ul>
+</li>
+<li><a href="https://www.youtube.com/playlist?list=PL7A02833F8478FF87">Advanced Operations Research by Prof. G.Srinivasan</a></li>
+<li>Exponential Process Introduction <a href="https://www.youtube.com/watch?v=bKkLYSi5XNE">https://www.youtube.com/watch?v=bKkLYSi5XNE</a></li>
+<li>Queuing and Loss Simulation: <a href="http://www.ccs-labs.org/teaching/rn/animations/queue/">http://www.ccs-labs.org/teaching/rn/animations/queue/</a></li>
+<li>Leonard Kleinrock: <a href="https://www.youtube.com/watch?v=qsgrtrwydjw">https://www.youtube.com/watch?v=qsgrtrwydjw</a></li>
+<li><a href="https://www.amazon.com/Network-Routing-Second-Algorithms-Architectures/dp/0128007370">Network Routing, Second Edition: Algorithms, Protocols, and Architectures (The Morgan Kaufmann Series in Networking)</a></li>
+<li><a href="https://www.amazon.com/High-Performance-Data-Network-Design/dp/1555582079">High Performance Data Network Design: Design Techniques and Tools</a></li>
+<li><a href="https://www.amazon.com/Queueing-Modelling-Fundamentals-Applications-Communication/dp/0470519576">Queueing Modelling Fundamentals: With Applications in Communication Networks</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Review: High School Fleet]]></title>
+    <link href="https://fuuko.net/Anime%20Review:%20High%20School%20Fleet.html"/>
+    <updated>2018-02-11T14:45:00+01:00</updated>
+    <id>https://fuuko.net/Anime%20Review:%20High%20School%20Fleet.html</id>
+    <content type="html"><![CDATA[
+<p><strong>Overall rating: 9</strong><br/>
+<em>This review will contain spoilers in regards to some of the main plot points of the show. You have been warned!</em><br/>
+<img src="media/15183567008391/15183571126103.jpg" alt=""/></p>
+
+<p>Wait a moment. High School Fleet? You mean to tell me, there is yet ANOTHER anime with girls and warships?  I have no idea how this slipped past my attention, but it seems to be Girls und Panzer-esque, except in warships instead of tanks. So being a fan of the likes of <a href="https://kitsu.io/anime/aoki-hagane-no-arpeggio-ars-nova">Apreggio of Blue Steel</a>, <a href="https://kitsu.io/anime/kantai-collection">Kantai Collection</a>, and the aforementioned Girls und Panzer there was no way in hell I was not going to watch this.   </p>
+
+<p>I honestly came expecting a anime where cute girls do cute things , but I was surprised by the way it ended up being and honestly it surpassed my expectations. And I&#39;m glad that is not slice of life show that I was expecting because that made it even more interesting.   </p>
+
+<p>The series starts off quickly and reveals that a girl named Akeno Misaki (nicknamed “Mike”) with a big dream. She enrolls at an academy known as “Yokosuka Girls&#39; Marine High School” with the goal to join the Blue Mermaids. For the first episode, the show establishes that Akeno and her crew faces unexpected circumstances as they are accused of mutiny. Furthermore, Akeno becomes the captain of the destroyer ship Harekaze. Make no mistake though, the show has a rather serious vibe despite the misleading atmosphere. The crew faces against battleships armed with real firepower capable of destroying them. Furthermore, Akeno is a newbie with lack of experience and tries hard to earn the respect of her crew. In essence, the show makes it clear that it’s no joke and pushes the idea of naval warfare to a level that you may not be prepared for.</p>
+
+<p>As for the characters, individually, they don’t appear to be all that special, but as a whole, the cast turned out to be pretty decent.<br/>
+<img src="media/15183567008391/15183590110883.jpg" alt=""/></p>
+
+<p><em>(from left to right) Mei, Shima, Kouko, Wilhelmina, Rin, Mike, Isoroku, Mashiro, Akane, Homare, Maron, and Kaede</em><br/>
+“Decent” is probably the best compliment I can come up with for Mike, who’s one of those protagonists that I generally don’t enjoy very much. She’s your every girl who winds up being the captain of the Harekaze, a smaller ship that’s home to a ragtag group of girls that weren’t thought of very highly. At times, she’s pretty inept in her leadership role, with Mashiro being much more fitting for the role of captain, yet this was one of those instances where a bland character gets outshined by several girls with lesser roles.  </p>
+
+<p>Among the crew, there is a variety of characters. One thought that crossed my mind is how the show can fit characterization with so many. After all, introducing all the girls at once seems like a mistake because there’s nothing in particular that makes them stand out individually besides the main protagonists. Most of them seems to have generic characteristics as well ranging from being stubborn, class clown, nervousness, etc. It’s also hard to ignore the similarities between this and Girls und Panzer especially with how talent is developed from both series. In some ways, the show does a neat job at making each episode relevant with its premise. In other ways, I have to say that the character cast is perhaps just too big for its own good. </p>
+
+<p><img src="media/15183567008391/15183599783831.jpg" alt=""/><br/>
+Wilhelmina immediately comes to mind, as the German beauty eventually finds herself aboard the Harekaze after the shit hits the fan on board her own ship. If I could’ve had my way, I would’ve traded Mike for Wilhelmina, with Mashiro assuming the role of captain of the Harekaze, but that would’ve made too much sense.  😛<br/>
+<img src="media/15183567008391/15183600577029.jpg" alt=""/><br/>
+Maron and Kouko also left favorable impressions, and while Kouko had plenty of brief moments throughout the series, Episode 10 saw Maron shine as the person in charge of the Equator Festival. That was mostly a filler episode that gave us a lot of slice of life moments, yet it was fun nevertheless, thanks in large part to Maron. Oh, and there’s a cat that I liked better than some of the characters…  😀</p>
+
+<p>Either way, you’ll probably find some characters from the series to be more noticeable than others. Besides Akeno, we have Mashiro Munetani, the deputy captain of Harekaze. Unlike Akeno, she seems more like the serious type that takes everything a bit too straightforward and even has a case of allurophobia. Then, there’s quiet girls like Shima Tateishi with elite gunning skills, Mei Irizaki with her passion to fight, Kouka Nosa with a theoretical mind, and timid Rin Shiretoko with decent steering abilities. They make up the bulk of the characters’ screen time so keep in mind while watching their roles. What I also find insightful about the show is that it divides the Blue Mermaid crew well with division to make each of them unique. For instance, there’s the Bridge of the crew with their central command objectives, the combat unit with their fighting talents, navigation division with their abilities to navigate under any circumstance, engineering department for construct and repair, and Logistics for aid in operations. The point is that the show doesn’t neglect any part of the Blue Mermaid crew and makes each role important to ensure the team’s success. On the downside, there isn’t much concrete characterization. The sheer amount of characters for this one cour show just seems a bit too much and perhaps the most characterization we’ll get is between Akeno’s childhood with her friend.  </p>
+
+<p>Between the story and the slice of life feeling, High School Fleet feels more like a marine school/military hybrid adventure. The show makes it clear that Blue Mermaid is in danger at times especially when combating other ships (the most prominent one being the infamous Musashi). At other times, it feels like a school floating on water. This is because of the inner storytelling that goes inside the ship with the girls living their dream job. They want to have fun while working so on occasions, there will emerge “breather” episodes to show their lifestyle. At other times, they must be prepared for what’s ahead. That is, one particular part of the story baffles me with the way it’s executed when it involves peculiar experimentations. I’m all in for surprises but that took me by storm, almost like the way that Akeno is taken by her unexpected role. For some, this could drive away viewers from further pursuing the series but for others, it may also spark more interest. In retrospect, High School Fleet is one of those shows that you’ll have to expect the unexpected.   </p>
+
+<p>It’s an anime original first and produced by TMS Entertainment. For artwork standards, it’s fairly well done in terms of ship designs. This is important because it gives more viewers interest to see how they work. I’m also impressed by the way Harekaze is designed with its 12.7 cm/50 Type 3 naval gun turrets and MK 16 naval guns. The 5&quot;/54 caliber Mark 16 and Mark 37 also looks surprisingly realistic. In terms of character designs, it’s generally moderate with a decent effort and budget poured towards making the girls look adorable and professional. Remember, there are at least 30 girls on just one ship alone! Like most shows that takes almost exclusively at sea, expect fan service with an even inevitable “beach episode”. However, the show itself excels the most at combat choreography. Even the night battles gives a strong impression of what naval warfare about. And in essence, the series knows how to expand its limits to make the fights believable. </p>
+
+<p>The ships are really well animated and they do feel like the girls are on board a real ship with all of its related equipment and weapons. Explosions are also eye candy and pairs well with the sound effects. The ships move realistically, shakes and rides the waves like a ship would. The water animation is of note as well and makes you feel like they are at sea. If you just came for the battles and fights, you’ll be pleased as the weapons are also fairly well animated (torpedoes especially). If you came for the cute girls then you won’t be disappointed either. 31 cuties each with a different style to match their persona and all of them will leave at least some impressionable image in your mind. Although for some reason, it might just be me, but the ships seems to be in a higher resolution than the characters sometimes. However, it’s nothing too significant that can affect the enjoyment of the show.  </p>
+
+<p>High School Fleet makes extensive use of CG, which is sure to turn off some people. I don’t think I’m one to immediately dismiss an anime that’s heavy on CG, but I’m unsure how I feel about it here. There are times when it genuinely looks pretty good and you know that a traditional hand-drawn style probably wouldn’t have resulted in the same visual quality, yet there are other times where it just looks so garish and awkward. For me, it wasn’t a deal-breaker or anything, but apart from the CG, this was a decent-looking show that I can’t fault too much. When it comes to the sound, I don’t think HSF is all that exceptional in this regard, but it gets the job done with some reasonably solid music that—while not being overly memorable—doesn’t exactly feel subpar. Overall, I think that the production values are more than sufficient, which is a pretty good word to describe this anime as a whole.</p>
+
+<p>On the subject of soundtrack, the show is crisp and knows what it’s doing most of the time. This is especially true for the intense battle orchestrated OST that really gets the adrenaline pumping. Character voices are also accurately portrayed to reflect their personalities and expressions. Remember, these girls are practically part of the military so it’s interesting to see how they react under extreme circumstances. The voice mannerism does just that. OP and ED theme songs are catchy as well that gives the marine vibes and cool atmospheric feeling.   </p>
+
+<p>OP is catchy and gets stuck in your head, ED is soft and calming. Both fits the theme of the sea very well. The sound track during the anime isn’t used to fill the silence but rather used to great effect adding lots of tension to the scenes. Those sound tracks can really get your heart racing during the fight scenes and your heart throbbing in some of the more emotional scenes, and trust me, the feels will hit you like a truck. Other sounds worth mentioning is the sound effects which are pretty good. You can hear the whistle of the shell getting louder as it get nearer to the ship, the heavy explosion during impact, the creaking of the ship under stress, the echo of detonations of torpedoes in the water and the list just goes on. All these sound effect adds more excitement, tension and action to the scenes and boy they feel satisfying.</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Wipe Out Aliyun Server Guard Agent]]></title>
+    <link href="https://fuuko.net/15171319125987.html"/>
+    <updated>2018-01-28T10:31:52+01:00</updated>
+    <id>https://fuuko.net/15171319125987.html</id>
+    <content type="html"><![CDATA[
+<h2 id="toc_0">Why NOT simply do reinstall via panel?</h2>
+
+<p>Server Guard Agent (SGA) is installed by default and Aliyun has an <a href="https://www.alibabacloud.com/help/doc-detail/31777.htm?spm=a3c0i.o31778en.b99.10.11511e0bKvNdEk">official uninstall guide</a>.</p>
+
+<p>However, after uninstalling SGA, your VM still <a href="https://fuuko.net/15147462575972.html">trying connecting SGA remote and uploading encrypted data</a>.  </p>
+
+<p>After blocked all IPs of SGA service, <a href="https://fuuko.net/15147362575182.html">an unknown key inserted in my .ssh/ directory</a>. I opened a ticket, they told me &quot;you were hacked&quot;. And I found <a href="https://fuuko.net/15147672575905.html">my sshd binary file was modified</a>.  </p>
+
+<p>So we will enable full system encryption to make VMs hosted by a provider which cannot be trusted invulnerable.</p>
+
+<h2 id="toc_1">Prepare your VM</h2>
+
+<p>You’ll install your custom distro onto a raw disk, with the direct disk boot option. The end result will be a working custom install; however, it will not support disk resizing from within the official panel, nor will it be compatible with the official backup service.<br/><br/>
+1. Create two raw, unformatted disk images. Can be done with Aliyun Console.<br/>
+2. Create two configuration profiles.</p>
+
+<p>Installer profile</p>
+
+<pre><code>Label: Installer
+Kernel: Direct Disk
+/dev/sda: Boot disk image.
+/dev/sdb: Installer disk image.
+root / boot device: Standard /dev/sdb
+</code></pre>
+
+<p>Boot profile</p>
+
+<pre><code>Label: Boot
+Kernel: Direct Disk
+/dev/sda: Boot disk image.
+root / boot device: Standard /dev/sda
+</code></pre>
+
+<h2 id="toc_2">Download and Install Image</h2>
+
+<ol>
+<li>Boot into Rescue Mode with your Installer disk mounted to /dev/sda, and connect to your VM using the Aliyun Console.</li>
+<li>Once in Rescue Mode, download your installation media and copy it to your Installer disk. In this example we’re using the Ubuntu net installer.</li>
+</ol>
+
+<pre><code class="language-bash">wget http://mirror.pnl.gov/releases/xenial/ubuntu-16.04.3-server-amd64.iso
+dd if=mini.iso of=/dev/sda
+</code></pre>
+
+<ol>
+<li>Reboot into your Installer configuration profile</li>
+<li>During your installer’s partitioning/installation phase, be sure to instruct it to use the /dev/sda volume and <strong>enable full system encryption</strong>.</li>
+<li>Once the installation completes, reboot into your Boot profile and open the console. You will have access to your VM.</li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Difference between OpenVZ and LXC]]></title>
+    <link href="https://fuuko.net/15147262575972.html"/>
+    <updated>2017-12-31T14:17:37+01:00</updated>
+    <id>https://fuuko.net/15147262575972.html</id>
+    <content type="html"><![CDATA[
+<h2 id="toc_0">Background: What’s a container?</h2>
+
+<p>Containers have been around for over 15 years, so why is there an influx of attention for containers? As compute hardware architectures become more elastic, potent, and dense, it becomes possible to run many applications at scale while lowering TCO, eliminating the redundant Kernel and Guest OS code typically used in a hypervisor-based deployment. This is attractive enough but also has benefits such as eliminating performance penalties, increase visibility and decrease difficulty of debug and management.</p>
+
+<p>Because containers share the host kernel, binaries and libraries, can be packed even denser than typical hypervisor environments can pack VM’s.</p>
+
+<h2 id="toc_1">OpenVZ</h2>
+
+<p>OpenVZ is a Linux container solution. It was first released in 2005 by SWSoft, now known as Parallels. Though connected to a private, proprietary company, OpenVZ is open source and available for free.</p>
+
+<p>The previously mentioned container projects have been related to BSD. One fundamental difference between BSD and Linux is that Linux is technically just a kernel. All of the tools that make Linux functional are supplemental and from different projects. For example, the chroot command in Ubuntu Linux comes from the GNU coreutils project.</p>
+
+<p>This distinction between BSD and Linux is quite important in the case of OpenVZ. Because containers require kernel level access, the container code needs to be integrated into the kernel. OpenVZ only released its code as a set of patches and custom-compiled Linux kernels they initially never bothered to get their code into the official Linux kernel.</p>
+
+<p>As explained in a recent OpenVZ blog entry, this was a mistake recognized way back in 2005, and the OpenVZ team has been working to get their code integrated into the main Linux kernel since then. This can sometimes be a very slow and painful process. The Xen project went through the same scenario.</p>
+
+<p>OpenVZ has never really gained widespread acceptance in the Linux community. This is unfortunate since it is a very robust project with a large amount of features.</p>
+
+<h1 id="toc_2">LXC</h1>
+
+<p>Finally, there is LXC. Well, before we get into LXC, let us talk about Linux Namespaces. A namespace is another term for segregation. Items in different namespaces are unable to collide or conflict with each other. Chroot can be thought of as a simple filesystem namespace.</p>
+
+<p>As we have seen with all the other container projects, they implement features beyond filesystem segregation: users, processes, and the network are all also segregated.</p>
+
+<p>Starting in 2001, the Linux kernel began supporting a series of namespaces. The first was mount namespaces, which can be thought of as an enhanced filesystem namespace. Since then, Linux has added support for UTS, IPC, PID, user, and network namespaces. This article goes into great detail about each of them.</p>
+
+<p>Next, a quick mention about control groups otherwise known as cgroups. Cgroups limit the amount of resources a certain process can use. For example, a process could be limited to use just 50% of the total CPU on the server.</p>
+
+<p>Between namespaces and cgroups, the Linux kernel has everything it needs to support a modern container system. And that is exactly what LXC is a collection of utilities that interact with namespaces and cgroups.</p>
+
+<p>So, since LXC uses features native to the Linux kernel, this should make it a better choice over OpenVZ, right? I guess that depends on one&#39;s opinion of those features.</p>
+
+<p>The Linux namespace and cgroup code is still in development. For example, user namespaces were only finalized a few months ago. Shortly after, they were found to be heavily exploitable.</p>
+
+<p>Security in general is a very subjective and relational topic: what one person is paranoid of can be of no matter to another person. Security has always been a hot topic with LXC. Here are several different articles on the subject.</p>
+
+<p>This part of the series summarized various existing container solutions. You might have noticed the added detail for the Linux-based solutions especially LXC.</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[BitTorrent Traffic Detection with Deep Flow Inspection]]></title>
+    <link href="https://fuuko.net/15139994534279.html"/>
+    <updated>2017-12-23T04:24:13+01:00</updated>
+    <id>https://fuuko.net/15139994534279.html</id>
+    <content type="html"><![CDATA[
+<h2 id="toc_0">1. What is Deep Flow Inspection(DFI)?</h2>
+
+<p>As the name implies, the analysis or the classification of P2P traffic is a flow-based, focusing on the connection level patterns of P2P applications. Thus, it does not require any payload analysis, unlike DPI. Because it doesn’t require payload analysis, encrypted data packets can be easily supported. The down side of this approach is that there is an additional step of extracting the connection level pattern for the P2P traffics. And yet, there is no rule of thumb for which network feature should be used in this method. </p>
+
+<h2 id="toc_1">2. Proposed System</h2>
+
+<h3 id="toc_2">2.1 Training Module</h3>
+
+<p><img src="media/15139994534279/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202017-12-23%2012.36.10.png" alt="スクリーンショット 2017-12-23 12.36.10"/><br/>
+** Figure 1: Proposed system to classify BT packet flows **</p>
+
+<h3 id="toc_3">2.2</h3>
+
+<h4 id="toc_4">2.2.1 Ground truth generation</h4>
+
+<p>The ground truth is the packet flows with known classes. In order to train a classifier, there are two types of packet flows needed to capture, namely the BT and non-BT packet flows. To capture the BT packets, I manually force the BT client to use a single TCP port (i.e. 1200) for data transfer. Thus, all the BT traffic must go through thisTCP port. Then, I start a sample torrent file and the BT client will automatically start downloading/uploading the contents. At the same time, I start my packet capturing program to obtain the packets.Similarly, to capture non-BT packets, I start my packet capturing program while we were creating non-BT network activities including HTTP,FTP and SSH. With the known class of the packets in the PCAP files, I could start training the classifier.    </p>
+
+<h4 id="toc_5">2.2.2  Study of DFI classifier accuracy</h4>
+
+<p><img src="media/15139994534279/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202017-12-23%2012.38.56.png" alt="スクリーンショット 2017-12-23 12.38.56"/><br/>
+** Figure 2: Classifier accuracy with different training samples **<br/>
+Figure 2 shows the classifier accuracy with increasing number of BT packet flows used to train the classifier. The classifier was first trained with a set of BT samples, and then it was tested against with some otherBT packet flows to observe the accuracy. This experiment gives us some clues about the number of packet flows should be used in order train a reliable classifier for the DFI module.As expected, the moreBT packets are used to train the classifier, the better the accuracy is. However, as the number of the BT packets increase, the classifier will be saturated at some point.  After that, even more packets is provided, the accuracy does not increase significantly.   </p>
+
+<h2 id="toc_6">2.2 Source code:</h2>
+
+<p><a href="https://github.com/itsuwari/BitTorrent-Traffic-Detection-with-Deep-Flow-Inspection/">https://github.com/itsuwari/BitTorrent-Traffic-Detection-with-Deep-Flow-Inspection/</a></p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Thoughts on the Nintendo Switch]]></title>
+    <link href="https://fuuko.net/15136686867614.html"/>
+    <updated>2017-12-19T08:31:26+01:00</updated>
+    <id>https://fuuko.net/15136686867614.html</id>
+    <content type="html"><![CDATA[
+<p>This past weekend marked the first time the public got their hands on the newest console coming from Nintendo, the Nintendo Switch. The Switch’s first look and other imagery has shown what looks like an older target audience than kids and families, a switch (no pun intended) from Nintendo’s other consoles. So will it make a good family console, like the Wii U?  </p>
+
+<p>I had a chance to get my hands on it and I’m convinced the Switch will be our next must-have console for the entire family. “Nintendo Switch is for everyone,” Cindy Gordon, Nintendo’s VP of Corporate Affairs told me. Here are a few reasons why you should consider picking it up for family.  </p>
+
+<h1 id="toc_0">The game line-up is as great as you’d expect — and more.</h1>
+
+<p>There are some things you can anticipate when a new Nintendo console is announced — a new Legend of Zelda, a new Mario adventure, and memorable party games are just a few of Nintendo’s area of expertise that gamers have come to expect, and the Switch will deliver on all of those. (Super Mario Odyssey is such a big adventure, however, that it won’t be available until later in the year.)  </p>
+
+<p>But the Nintendo Switch is also branching out into new games and franchises that have never been on a Nintendo system before. The Elder Scrolls: Skyrim, FIFA, and NBA 2K are also headed to the Switch, and Nintendo is committed to working with third-party developers for an even more diverse offering of games.  </p>
+
+<h1 id="toc_1">The Switch is incredibly portable.</h1>
+
+<p>Easily the most appealing part of the Nintendo Switch is the hassle-free portability. The screen quickly and simply undocks from the console, the Joy-Con controllers attach to the side, and you instantly have a portable game with high-quality graphics that look just as good as they do on the TV.  </p>
+
+<p>If you’ve ever dreamed about playing Skyrim during a long flight or the kids having Splatoon battles in the backseat on the way to Grandma’s, the Switch is about to make that a reality–without any cords or mess, said Gordon. Battery life ranges from two-and-a-half to six-and-a-half hours, depending on the game. The Legend of Zelda: Breath of the Wild will last about three hours before needing to recharge, estimated Gordon.   </p>
+
+<h1 id="toc_2">The controllers are made for hands of all sizes.</h1>
+
+<p>The Switch’s controllers, known as Joy-Con, are surprisingly small and can fit hands of all sizes and ages. “Joy-Con are little technological feats of innovation that pack a powerful punch,” Gordon said.  </p>
+
+<p>The innovative design allows different ways to play depending on the game you’re playing. Attach it to the sides of the screen for gaming on the go, use it as a traditional controller, or pull the two pieces apart and use them similar to Wiimotes. Kids and adults alike will appreciate the flexibility.  </p>
+
+<p>When separated, you can also turn the Joy-Con horizontally and use it in a style similar to the original NES controller. I had the chance to play Mario Kart 8 Deluxe with it in that manner, however, and even my small hands started to cramp a little due to the tiny controller. Parents may want to pick up the Pro Controller if they’ll be doing just as much gaming as the kids.  </p>
+
+<h1 id="toc_3">Parental controls are built in.</h1>
+
+<p>You know.  </p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Free Alternatives to Gaussian]]></title>
+    <link href="https://fuuko.net/15136684903532.html"/>
+    <updated>2017-12-19T08:28:10+01:00</updated>
+    <id>https://fuuko.net/15136684903532.html</id>
+    <content type="html"><![CDATA[
+<p>&#39;Free software&#39; here not means &#39;libre software&#39;.  </p>
+
+<h1 id="toc_0">1. <a href="http://www.gromacs.org/">GAMESS</a></h1>
+
+<p>Most similar to Gaussian, and code is really clean and easy to read, even have <a href="http://www.gromacs.org/Developer_Zone">documents</a> for developers.    </p>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td>BSD</td>
+</tr>
+</tbody>
+</table>
+
+<h1 id="toc_1">2. <a href="http://www.psicode.org/">PSI</a></h1>
+
+<p>An Open-Source electronic structure program emphasizing automation, advanced libraries, and interoperability.  </p>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td>GNUv3</td>
+</tr>
+</tbody>
+</table>
+
+<h1 id="toc_2">3. <a href="http://lammps.sandia.gov/">LAMMPS</a></h1>
+
+<p>Has potentials for solid-state materials (metals, semiconductors) and soft matter (biomolecules, polymers) and coarse-grained or mesoscopic systems. It can be used to model atoms or, more generically, as a parallel particle simulator at the atomic, meso, or continuum scale.     </p>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td>GPLv3</td>
+</tr>
+</tbody>
+</table>
+
+<!--more-->
+
+<h1 id="toc_3">4. <a href="https://ccpforge.cse.rl.ac.uk/gf/project/castep/">CASTEP</a></h1>
+
+<p>Specializes in periodic systems with plane wave basis sets.    </p>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>No</td>
+<td>commercial</td>
+</tr>
+</tbody>
+</table>
+
+<h1 id="toc_4">5. <a href="http://www.qtp.ufl.edu/ACES/">ACES</a></h1>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td>GPLv3</td>
+</tr>
+</tbody>
+</table>
+
+<p>Specializes in high level quantum chemistry calculations.<br/><br/>
+Taken the best features of parallel implementations of quantum chemistry methods for electronic structure.  </p>
+
+<h1 id="toc_5">6.<a href="http://www.diracprogram.org/doku.php">DIRAC</a></h1>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>No</td>
+<td>Unknown</td>
+</tr>
+</tbody>
+</table>
+
+<p>Oriented towards relativistic quantum chemistry problems.</p>
+
+<h1 id="toc_6">7. <a href="http://www.nwchem-sw.org/index.php/Main_Page">NWChem</a></h1>
+
+<table>
+<thead>
+<tr>
+<th>Opensource</th>
+<th>License</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Yes</td>
+<td><a href="https://en.wikipedia.org/wiki/Educational_Community_License">ECL</a></td>
+</tr>
+</tbody>
+</table>
+
+<p>Can calculate a smaller set of properties but it can handle mixed QM/MM calculations and periodic systems like solids.</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Advanced Materials Through AI & Computational Materials Science]]></title>
+    <link href="https://fuuko.net/15136677588220.html"/>
+    <updated>2017-12-19T08:15:58+01:00</updated>
+    <id>https://fuuko.net/15136677588220.html</id>
+    <content type="html"><![CDATA[
+<p>A recent <a href="https://www.nature.com/news/can-artificial-intelligence-create-the-next-wonder-material-1.19850">Nature article</a> examines how materials researchers are using artificial intelligence to make quantum-mechanical calculations in only a few seconds that once took supercomputers hours to complete.  </p>
+
+<p>These computer modeling and machine-learning techniques are generating enormous libraries of materials candidates. Researchers hope that this approach will produce a giant leap in the speed and usefulness of materials discovery. British materials scientist Neil Alford observes, “We are now seeing a real convergence of what experimentalists want and what theorists can deliver.”  </p>
+
+<p>The most promising results so far have been achieved with lithium compounds, used in batteries and other applications..  </p>
+
+<p>The Nature article also argues that “artificial intelligence will help researchers comb through vast numbers of materials to find just the one they need for the application at hand.” The standard process starts with researchers applying machine learning to lab data and computer modeling in order to extract common patterns and predict new materials. Researchers then look for a material with specific properties and pass along their findings to chemists, who try to produce the theoretical material for testing.  </p>
+
+<p>Personally, I think huge opportunities are available from these types of materials databases — the potential is almost limitless. The advances made so far remind me of the robotic discovery efforts at Dow, the advances made by Bristol-Myers Squibb and other pharmaceutical companies, and recent virus discoveries, such as the ones made by Angie Belcher’s group. These discoveries have resulted in everything from catalysts for oxidative coupling of methane to battery electrode materials. These types of efforts are the physical analog to the computational approaches described in these material databases.  </p>
+
+<p>Transforming computer predictions to real-world technologies, however, is difficult. Existing databases include a small fraction of all the known materials and only a few possible ones. Researchers have also learned that data-driven discovery works well for some materials, but not for others. And even when researchers successfully isolate a material with potential, it can take years for chemists to synthesize it in a lab.  </p>
+
+<p>Despite these challenges, researchers remain confident that they will discover many useful materials that could lead to innovations in electronics, robotics, healthcare, and other fields. In my opinion, the key for researchers is to avoid the scattershot approach. If scientists can try everything, how do we decide where to focus our efforts? To focus the research there must still be brains behind the computational or robotic synthesis efforts. We need to ensure that we aren’t trying to boil the ocean.  </p>
+
+<p>I believe that success will require collaboration between different disciplines and groups. For example, people who understand the computational work may not completely understand the physical impact on materials. We must combine those two areas to provide meaningful information that can be used to impact physical materials. Information inside a computer is only useful if we can translate it to the physical world.  </p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Inevitable Comparison: TCP vs UDP]]></title>
+    <link href="https://fuuko.net/15136683515000.html"/>
+    <updated>2017-12-19T08:25:51+01:00</updated>
+    <id>https://fuuko.net/15136683515000.html</id>
+    <content type="html"><![CDATA[
+<p>We use Transmission Control Protocol (TCP) and User Datagram Protocol (UDP) to transfer data over the internet.  </p>
+
+<p>TCP is the most commonly used protocol because it offers a lot of built-in features such as connection, error-checking and ordering. Also packet delivery is guaranteed.  </p>
+
+<p>UDP is also one of the most used protocol. While TCP offers a lot of features, UDP just provides packet throwing. There is no connection, error-checking, ordering etc.  </p>
+
+<p>Before talking about use cases, let’s look at their features.<br/>
+Connection</p>
+
+<ul>
+<li>TCP: Connection-oriented (persistent) </li>
+<li>UDP: Connectionless (fresh air)</li>
+</ul>
+
+<p>Reliability  </p>
+
+<ul>
+<li>TCP: Reliable (Ordered, Guaranteed) </li>
+<li>UDP: Unreliable (Drop, Disordering possiblities)<br/></li>
+</ul>
+
+<p>Weight  </p>
+
+<ul>
+<li>TCP: Heavy (Background mechanisms)</li>
+<li><p>UDP: Light (Simply throw packets)<br/>
+Transport</p></li>
+<li><p>TCP: Stream (Continous, Ordered)</p></li>
+<li><p>UDP: Datagram (Unrelated delivery)<br/>
+Flow Control</p></li>
+<li><p>TCP: Windowing, Congestion Avoidance</p></li>
+<li><p>UDP: Nothing<br/>
+Speed</p></li>
+<li><p>TCP: Slow (Resending, Recovering, Error-checking etc.)</p></li>
+<li><p>UDP: Fast (Nothing)</p></li>
+</ul>
+
+<p>We use TCP for important data because it has reliable and persistent pipeline. For example HTTP (Web), FTP (File), SMTP (Email), SSH (Terminal), SQL (DB Queries) built top of TCP.<br/>
+We use UDP for unimportant, temporal data because there is no consistent mechanism for reliability or persistance. For example games, VoIP services, media streaming, broadcasting built with UDP.  </p>
+
+<p>Choosing the right protocol depends on your needs. Most of developers use TCP because it does pretty much everything built-in also it’s easy as file i/o. My suggestion is use TCP for less frequent, more important data; use UDP for more frequent, less important data.  </p>
+
+<p>I tried to tell you basic differences between TCP and UDP protocols but there is one more thing to understand (where the magic begins!): They both developed on Internet Protocol (IP). TCP provides ‘connection’ but connection is an illusion! There is a three-way handshake for connection establishment. Simply, TCP is UDP with advanced features. There were some good developers, they implemented useful solutions for industry needs. Did you ever wanted to go deep into connection establishment, reliability mechanisms? Do you want to implement your own TCP-like protocol?</p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Differences between TLS 1.2 and TLS 1.3]]></title>
+    <link href="https://fuuko.net/15136685483165.html"/>
+    <updated>2017-12-19T08:29:08+01:00</updated>
+    <id>https://fuuko.net/15136685483165.html</id>
+    <content type="html"><![CDATA[
+<p>The current version of TLS, TLS 1.2, was defined in RFC 5246 and has been in use for the past eight years by the majority of all web browsers.  Companies such as Cloudflare are already making TLS 1.3 available to their customers.   </p>
+
+<p>With the release of TLS 1.3, there are promises of enhanced security and speed. But how exactly do the changes from TLS 1.2 to TLS 1.3 cause these improvements? The following is a list of differences between TLS 1.2 and 1.3 that shows how the improvements are achieved.  </p>
+
+<p>This protocol was defined in an Internet Draft in April of 2017. TLS 1.3 contains improved security and speed. The major differences include:</p>
+
+<p>• The list of supported symmetric algorithms has been pruned of all legacy algorithms. The remaining algorithms all use Authenticated Encryption with Associated Data (AEAD) algorithms.</p>
+
+<p>• A zero-RTT (0-RTT) mode was added, saving a round-trip at connection setup for some application data at the cost of certain security properties.</p>
+
+<p>• All handshake messages after the ServerHello are now encrypted.</p>
+
+<p>• Key derivation functions have been re-designed, with the HMAC-based Extract-and-Expand Key Derivation Function (HKDF) being used as a primitive.</p>
+
+<p>• The handshake state machine has been restructured to be more consistent and remove superfluous messages.</p>
+
+<p>• ECC is now in the base spec  and includes new signature algorithms. Point format negotiation has been removed in favor of single point format for each curve.</p>
+
+<p>• Compression, custom DHE groups, and DSA have been removed, RSA padding now uses PSS.</p>
+
+<p>• TLS 1.2 version negotiation verification mechanism was deprecated in favor of a version list in an extension.</p>
+
+<p>• Session resumption with and without server-side state and the PSK-based ciphersuites of earlier versions of TLS have been replaced by a single new PSK exchange.</p>
+
+<p>In short, the major benefits of TLS 1.3 vs that of TLS 1.2 is faster speeds and improved security.  </p>
+
+<h2 id="toc_0">Speed Benefits of TLS 1.3</h2>
+
+<p>TLS and encrypted connections have always added a slight overhead when it comes to web performance. <a href="https://ja.wikipedia.org/wiki/HTTP/2">HTTP/2</a> definitely helped with this problem, but TLS 1.3 helps speed up encrypted connections even more. To put it simply, with TLS 1.2, two round-trips have been needed to complete the TLS handshake. With 1.3, it requires only <strong>one</strong> round-trip, which in turn cuts the encryption latency in half. This helps those encrypted connections feel just a little bit snappier than before.<br/><br/>
+<img src="media/15136685483165/tls1.3.png" alt="tls1.3"/></p>
+
+<p>Another advantage of is that in a sense, on sites you have previously visited, you can now send data on the first message to the server. This is called a “zero round trip.” (0-RTT). And yes, this also results in improved load time times.    </p>
+
+<h2 id="toc_1">Improved Security With TLS 1.3</h2>
+
+<p>A big problem with TLS 1.2 is that it’s often not configured properly it leaves websites vulnerable to attacks. TLS 1.3 now removes obsolete and insecure features from TLS 1.2, including the following:</p>
+
+<ul>
+<li>SHA-1</li>
+<li>RC4</li>
+<li>DES</li>
+<li>3DES</li>
+<li>AES-CBC</li>
+<li>MD5</li>
+<li>Arbitrary Diffie-Hellman groups — <a href="http://blog.intothesymmetry.com/2016/01/openssl-key-recovery-attack-on-dh-small.html">CVE-2016-0701</a></li>
+<li>EXPORT-strength ciphers – Responsible for <a href="https://censys.io/blog/freak">FREAK</a> and LogJam</li>
+</ul>
+
+<p>Because the protocol is in a sense more simplified, this make it less likely for administrators and developers to misconfigure the protocol. </p>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Sending raw Ethernet packets from a specific interface in C on Linux]]></title>
+    <link href="https://fuuko.net/15136687695430.html"/>
+    <updated>2017-12-19T08:32:49+01:00</updated>
+    <id>https://fuuko.net/15136687695430.html</id>
+    <content type="html"><![CDATA[
+<p>Lately I’ve been writing some code to send packets to a specific MAC address from a specific interface. I’m sure this will come in handy again so here is how it goes:</p>
+
+<h2 id="toc_0"><strong>Includes</strong></h2>
+
+<pre><code class="language-c">    #include &lt;netinet/in.h&gt;
+    #include &lt;sys/socket.h&gt;
+    #include &lt;arpa/inet.h&gt;
+    #include &lt;net/if.h&gt;
+    #include &lt;netinet/ip.h&gt;
+    #include &lt;netinet/udp.h&gt;
+    #include &lt;netinet/ether.h&gt;
+    #include &lt;linux/if_packet.h&gt;
+</code></pre>
+
+<h2 id="toc_1"><strong>Open the raw socket:</strong></h2>
+
+<pre><code class="language-c">    int sockfd;
+    ...
+    /* Open RAW socket to send on */
+    if ((sockfd = socket(AF_PACKET, SOCK_RAW, IPPROTO_RAW)) == -1) {
+        perror(&quot;socket&quot;);
+    }
+</code></pre>
+
+<h2 id="toc_2"><strong>Get the index of the interface to send on:</strong></h2>
+
+<pre><code class="language-c">    struct ifreq if_idx;
+    ...
+    memset(&amp;if_idx, 0, sizeof(struct ifreq));
+    strncpy(if_idx.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
+    if (ioctl(sock, SIOCGIFINDEX, &amp;if_idx) &lt; 0)
+        perror(&quot;SIOCGIFINDEX&quot;);  
+</code></pre>
+
+<h2 id="toc_3"><strong>Get the MAC address of the interface to send on:</strong></h2>
+
+<pre><code class="language-c">    struct ifreq if_mac;
+    ...
+    memset(&amp;if_mac, 0, sizeof(struct ifreq));
+    strncpy(if_mac.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
+    if (ioctl(sock, SIOCGIFHWADDR, &amp;if_mac) &lt; 0)
+        perror(&quot;SIOCGIFHWADDR&quot;);
+</code></pre>
+
+<h2 id="toc_4"><strong>Get the IP address of the interface to send on:</strong></h2>
+
+<pre><code class="language-c">    struct ifreq if_ip;
+    ...
+    memset(&amp;if_ip, 0, sizeof(struct ifreq));
+    strncpy(if_ip.ifr_name, &quot;eth0&quot;, IFNAMSIZ-1);
+    if (ioctl(sock, SIOCGIFADDR, &amp;if_ip) &lt; 0)
+        perror(&quot;SIOCGIFADDR&quot;);
+</code></pre>
+
+<h2 id="toc_5"><strong>Construct the Ethernet header:</strong></h2>
+
+<pre><code class="language-c">    int tx_len = 0;
+    char sendbuf[1024];
+    struct ether_header *eh = (struct ether_header *) sendbuf;
+    ...
+    memset(sendbuf, 0, 1024);
+    /* Ethernet header */
+    eh-&gt;ether_shost[0] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[0];
+    eh-&gt;ether_shost[1] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[1];
+    eh-&gt;ether_shost[2] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[2];
+    eh-&gt;ether_shost[3] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[3];
+    eh-&gt;ether_shost[4] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[4];
+    eh-&gt;ether_shost[5] = ((uint8_t *)&amp;if_mac.ifr_hwaddr.sa_data)[5];
+    eh-&gt;ether_dhost[0] = MY_DEST_MAC0;
+    eh-&gt;ether_dhost[1] = MY_DEST_MAC1;
+    eh-&gt;ether_dhost[2] = MY_DEST_MAC2;
+    eh-&gt;ether_dhost[3] = MY_DEST_MAC3;
+    eh-&gt;ether_dhost[4] = MY_DEST_MAC4;
+    eh-&gt;ether_dhost[5] = MY_DEST_MAC5;
+    eh-&gt;ether_type = htons(ETH_P_IP);
+    tx_len += sizeof(struct ether_header);  
+</code></pre>
+
+<h2 id="toc_6"><strong>Construct the IP header:</strong></h2>
+
+<pre><code class="language-c">    struct iphdr *iph = (struct iphdr *) (sendbuf + sizeof(struct ether_header));
+    ...
+    /* IP Header */
+    iph-&gt;ihl = 5;
+    iph-&gt;version = 4;
+    iph-&gt;tos = 16; // Low delay
+    iph-&gt;id = htons(54321);
+    iph-&gt;ttl = ttl; // hops
+    iph-&gt;protocol = 17; // UDP
+    /* Source IP address, can be spoofed */
+    iph-&gt;saddr = inet_addr(inet_ntoa(((struct sockaddr_in *)&amp;if_ip.ifr_addr)-&gt;sin_addr));
+    // iph-&gt;saddr = inet_addr(&quot;192.168.0.112&quot;);
+    /* Destination IP address */
+    iph-&gt;daddr = inet_addr(&quot;192.168.0.111&quot;);
+    tx_len += sizeof(struct iphdr);  
+</code></pre>
+
+<h2 id="toc_7"><strong>Construct the UDP header:</strong></h2>
+
+<pre><code class="language-c">    struct udphdr *udph = (struct udphdr *) (sendbuf + sizeof(struct iphdr) + sizeof(struct ether_header));
+    ...
+    /* UDP Header */
+    udph-&gt;source = htons(3423);
+    udph-&gt;dest = htons(5342);
+    udph-&gt;check = 0; // skip
+    tx_len += sizeof(struct udphdr);  
+</code></pre>
+
+<h2 id="toc_8"><strong>Fill in UDP payload:</strong></h2>
+
+<pre><code class="language-c">    /* Packet data */
+    sendbuf[tx_len++] = 0xde;
+    sendbuf[tx_len++] = 0xad;
+    sendbuf[tx_len++] = 0xbe;
+    sendbuf[tx_len++] = 0xef;  
+</code></pre>
+
+<h2 id="toc_9"><strong>Fill in remaining header info:</strong></h2>
+
+<pre><code class="language-c">    unsigned short csum(unsigned short *buf, int nwords)
+    {
+        unsigned long sum;
+        for(sum=0; nwords&gt;0; nwords--)
+            sum += *buf++;
+        sum = (sum &gt;&gt; 16) + (sum &amp;0xffff);
+        sum += (sum &gt;&gt; 16);
+        return (unsigned short)(~sum);
+    }
+    ...
+    /* Length of UDP payload and header */
+    udph-&gt;len = htons(tx_len - sizeof(struct ether_header) - sizeof(struct iphdr));
+    /* Length of IP payload and header */
+    iph-&gt;tot_len = htons(tx_len - sizeof(struct ether_header));
+    /* Calculate IP checksum on completed header */
+    iph-&gt;check = csum((unsigned short *)(sendbuf+sizeof(struct ether_header)), sizeof(struct iphdr)/2);  
+</code></pre>
+
+<h2 id="toc_10"><strong>Send the raw Ethernet packet:</strong></h2>
+
+<pre><code class="language-c">    /* Destination address */
+    struct sockaddr_ll socket_address;
+    ...
+    /* Index of the network device */
+    socket_address.sll_ifindex = if_idx.ifr_ifindex;
+    /* Address length*/
+    socket_address.sll_halen = ETH_ALEN;
+    /* Destination MAC */
+    socket_address.sll_addr[0] = MY_DEST_MAC0;
+    socket_address.sll_addr[1] = MY_DEST_MAC1;
+    socket_address.sll_addr[2] = MY_DEST_MAC2;
+    socket_address.sll_addr[3] = MY_DEST_MAC3;
+    socket_address.sll_addr[4] = MY_DEST_MAC4;
+    socket_address.sll_addr[5] = MY_DEST_MAC5;
+    /* Send packet */
+    if (sendto(sock, sendbuf, tx_len, 0, (struct sockaddr*)&amp;socket_address, sizeof(struct sockaddr_ll)) &lt; 0)
+        printf(&quot;Send failed\n&quot;);  
+</code></pre>
+
+<h1 id="toc_11">Code available <a href="https://gist.github.com/itsuwari/ad6c8c963fa5c914ca10ee391a9d5d9b">here</a></h1>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Drive Headless Chromium with Python3]]></title>
+    <link href="https://fuuko.net/15136691816848.html"/>
+    <updated>2017-12-19T08:39:41+01:00</updated>
+    <id>https://fuuko.net/15136691816848.html</id>
+    <content type="html"><![CDATA[
+<h1 id="toc_0">Browser Automation</h1>
+
+<p>Before we dive into any code, let’s talk about what a headless browser is and why it’s useful. In short, headless browsers are web browsers without a graphical user interface (GUI) and are usually controlled programmatically or via a command-line interface.  </p>
+
+<p>One of the many use cases for headless browsers is automating usability testing or testing browser interactions. If you’re trying to check how a page may render in a different browser or confirm that page elements are present after a user initiates a certain workflow, using a headless browser can provide a lot of assistance. In addition to this, traditional web-oriented tasks like web scraping can be difficult to do if the content is rendered dynamically (say, via Javascript). Using a headless browser allows easy access to this content because the content is rendered exactly as it would be in a full browser.  </p>
+
+<h1 id="toc_1">Headless Chrome and Python</h1>
+
+<h2 id="toc_2">Going Headless!</h2>
+
+<h3 id="toc_3">Setup</h3>
+
+<p>Before we get started, we need to install Chromium and download the latest ChromeDriver.</p>
+
+<p>Next, let’s make a folder that will contain all of our files:  </p>
+
+<pre><code>mkdir going_headless
+#Now we can move the ChromeDriver into the directory that we just made:
+mv Downloads/chromedriver going_headless/
+</code></pre>
+
+<p>Since we are using Selenium with Python, it’s a good idea to make a Python virtual environment. I use virtualenv, so if you use another virtual environment manager, the commands may be different.  </p>
+
+<pre><code>$ cd going_headless &amp;&amp; virtualenv -p python3 env  
+$ source env/bin/activate
+</code></pre>
+
+<p>The next thing we need to do is install Selenium. If you’re not familiar with Selenium, it’s a suite of tools that allows developers to programmatically drive web browsers. It has language bindings for Java, C#, Ruby, Javascript (Node), and Python. To install the Selenium package for Python, we can run the following:  </p>
+
+<pre><code>pip3 install selenium  
+</code></pre>
+
+<h3 id="toc_4">Example</h3>
+
+<p>Now that we’ve gotten all of that out of the way, let’s get to the fun part. Our goal is to write a script that searches for my name “Hamples” on back.re, and checks that a recent article I wrote about Android security is listed in the results. If you’ve followed the instructions above, you can use the headless version of Chromium with Selenium like so:  </p>
+
+<pre><code>import os  
+from selenium import webdriver  
+from selenium.webdriver.common.keys import Keys  
+from selenium.webdriver.chrome.options import Options`  
+
+`chrome_options = Options()  
+chrome_options.add_argument(&quot;--headless&quot;)  
+chrome_options.binary_location = &#39;/Applications/Google Chromium.app/Contents/MacOS/Google Chromium&#39;`    
+
+`driver = webdriver.Chrome(executable_path=os.path.abspath(“chromedriver&quot;),   chrome_options=chrome_options)  
+driver.get(&quot;https://back.re&quot;)`  
+
+`magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
+if magnifying_glass.is_displayed():  
+  magnifying_glass.click()  
+else:  
+  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
+  menu_button.click()`  
+
+`search_field = driver.find_element_by_id(&quot;site-search&quot;)  
+search_field.clear()  
+search_field.send_keys(&quot;Hamples&quot;)  
+search_field.send_keys(Keys.RETURN)  
+assert &quot;Nothing...&quot; in driver.page_source   driver.close()` 
+</code></pre>
+
+<h3 id="toc_5">Example Explained</h3>
+
+<p>The driver.get function will be used navigate to the specified URL.</p>
+
+<pre><code>driver.get(&quot;https://back.re&quot;)
+</code></pre>
+
+<p>The back.re website is responsive, so we have to handle different conditions. As a result, we check to see if the expected search button is displayed. If it isn’t, we click the menu button to enter our search term.  </p>
+
+<pre><code>magnifying_glass = driver.find_element_by_id(&quot;js-open-icon&quot;)  
+if magnifying_glass.is_displayed():  
+  magnifying_glass.click()  
+else:  
+  menu_button = driver.find_element_by_css_selector(&quot;.menu-trigger.local&quot;)  
+  menu_button.click()  
+</code></pre>
+
+<p>Now we clear the search field, search for my name, and send the RETURN key to the drive.  </p>
+
+<pre><code>search_field = driver.find_element_by_id(&quot;site-search&quot;)  
+search_field.clear()  
+search_field.send_keys(&quot;Olabode&quot;)  
+search_field.send_keys(Keys.RETURN)
+</code></pre>
+
+<p>We check to make sure that the blog post title from one of my most recent posts is in the page’s source.  </p>
+
+<pre><code>assert &quot;Nothing...&quot; in driver.page_source
+</code></pre>
+
+<p>And finally, we close the browser.</p>
+
+<p><code>driver.close()</code>.</p>
+
+<h2 id="toc_6">Benchmarks</h2>
+
+<h3 id="toc_7">Head to Headless</h3>
+
+<p>So, it’s cool that we can now control Chrome using Selenium and Python without having to see a browser window, but we are more interested in the performance benefits we talked about earlier. Using the same script above, we profiled the time it took to complete the tasks, peak memory usage, and CPU percentage. We polled CPU and memory usage with psutil and measured the time for task completion using timeit.  </p>
+
+<p>For our small script, there were very small differences in the amount of time taken to complete the task (4.3%), memory usage (.5%), and CPU percentage (5.2%). While the gains in our example were very minimal, these gains would prove to be beneficial in a test suite with dozens of tests.  </p>
+
+<h1 id="toc_8">Resources</h1>
+
+<p>Chrome Links:  </p>
+
+<ul>
+<li><a href="https://www.chromium.org/getting-involved/download-chromium">Chromium</a></li>
+<li><a href="https://sites.google.com/a/chromium.org/chromedriver/downloads">Chrome Drive</a></li>
+<li><a href="https://chromedevtools.github.io/devtools-protocol/">DevTools API</a></li>
+</ul>
+
+<p>Selenium Links:  </p>
+
+<ul>
+<li><a href="https://www.seleniumhq.org/">Selenium HQ</a></li>
+<li><a href="https://selenium-python.readthedocs.io/">Python package</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[質問箱]]></title>
+    <link href="https://fuuko.net/hako.html"/>
+    <updated>2017-12-31T14:05:45+01:00</updated>
+    <id>https://fuuko.net/hako.html</id>
+    <content type="html"><![CDATA[
+<p>何でも気軽に聞いてください〜　　</p>
+
+]]></content>
+  </entry>
+  
+</feed>

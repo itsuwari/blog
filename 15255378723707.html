@@ -1,0 +1,748 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+  
+  AND (Average Network Delay) and Queuing Theory Basics - Fuuko's Lab
+  
+  </title>
+  <meta content="Fuuko's Lab" property="og:description">
+  <meta content="AND (Average Network Delay) and Queuing Theory Basics - Fuuko's Lab" property="og:title">
+  <meta content="Fuuko's Lab" property="og:site_name">
+  <meta content="https://fuuko.net/hitode.png" property="og:image">
+  
+  
+  <link href="atom.xml" rel="alternate" title="Fuuko's Lab" type="application/atom+xml">
+    <link rel="stylesheet" href="asset/css/foundation.min.css" />
+    <link rel="stylesheet" href="asset/css/docs.css" />
+    <script src="asset/js/vendor/modernizr.js"></script>
+    <script src="asset/js/vendor/jquery.js"></script>
+  <script src="asset/highlightjs/highlight.pack.js"></script>
+  <link href="asset/highlightjs/styles/github.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link rel="icon" href="https://fuuko.net/hitode.png">
+  <script>hljs.initHighlightingOnLoad();</script>
+<script type="text/javascript">
+  function before_search(){
+    var searchVal = 'site:fuuko.net ' + document.getElementById('search_input').value;
+    document.getElementById('search_q').value = searchVal;
+    return true;
+  }
+</script>
+  </head>
+  <body class="antialiased hide-extras">
+    
+    <div class="marketing off-canvas-wrap" data-offcanvas>
+      <div class="inner-wrap">
+
+
+<nav class="top-bar docs-bar hide-for-small" data-topbar>
+
+
+  <section class="top-bar-section">
+  <div class="row">
+      <div style="position: relative;width:100%;"><div style="position: absolute; width:100%;">
+        <ul id="main-menu" class="left">
+        
+        <li id=""><a target="_self" href="index.html">Home</a></li>
+        
+        <li id=""><a target="_self" href="archives.html">Archives</a></li>
+        
+        <li id=""><a target="_self" href="https://fuuko.net/tracker.html">Tracker</a></li>
+        
+        <li id=""><a target="_self" href="https://fuuko.net/status.html">Status</a></li>
+        
+        <li id=""><a target="_self" href="https://photo.fuuko.net/">Photos</a></li>
+        
+        <li id=""><a target="_self" href="about.html">About me</a></li>
+        
+        </ul>
+
+        <ul class="right" id="search-wrap">
+          <li>
+<form target="_blank" onsubmit="return before_search();" action="https://www.bing.com/search" method="get">
+    <input type="hidden" id="search_q" name="q" value="" />
+    <input tabindex="1" type="search" id="search_input"  placeholder="Search"/>
+</form>
+</li>
+          </ul>
+      </div></div>
+  </div>
+  </section>
+
+</nav>
+
+        <nav class="tab-bar show-for-small">
+  <a href="javascript:void(0)" class="left-off-canvas-toggle menu-icon">
+    <span> &nbsp; Fuuko's Lab</span>
+  </a>
+</nav>
+
+<aside class="left-off-canvas-menu">
+      <ul class="off-canvas-list">
+       
+       <li><a href="index.html">HOME</a></li>
+    <li><a href="archives.html">Archives</a></li>
+    <li><a href="about.html">ABOUT</a></li>
+
+    <li><label>Categories</label></li>
+
+        
+            <li><a href="Material.html">Material</a></li>
+        
+            <li><a href="Network.html">Network</a></li>
+        
+            <li><a href="Offtopics.html">Offtopics</a></li>
+        
+            <li><a href="Review.html">Review</a></li>
+         
+
+      </ul>
+    </aside>
+
+<a class="exit-off-canvas" href="#"></a>
+
+
+        <section id="main-content" role="main" class="scroll-container">
+        
+       
+
+ <script type="text/javascript">
+  $(function(){
+    $('#menu_item_index').addClass('is_active');
+  });
+</script>
+<div class="row">
+  <div class="large-8 medium-8 columns">
+      <div class="markdown-body article-wrap">
+       <div class="article">
+          
+          <h1>AND (Average Network Delay) and Queuing Theory Basics</h1>
+     
+        <div class="read-more clearfix">
+          <span class="date">2018/5/5</span>
+
+          <span>posted in&nbsp;</span> 
+          
+              <span class="posted-in"><a href='Network.html'>Network</a></span>
+           
+         
+          <span class="comments">
+            
+
+            
+          </span>
+
+        </div>
+      </div><!-- article -->
+
+      <div class="article-content">
+      <p>Recently I was looking at the Linear programming formulations of Traffic engineering problems and one of the problems is to find the path with the goal to minimize the Average network delay. Which got me thinking that for topology design related problems, how can I calculate the Average network delay? As you can guess, I&#39;m going to introduce the model we implemented in Hokkaido research network.  </p>
+
+<h2 id="toc_0">Before starting few things to keep in mind:</h2>
+
+<ul>
+<li>A background in Probability theory, particularly familiarity with Poisson and Exponential distribution will help. There is no way I can do the justice in explaining all the basics without distracting from the main goal.</li>
+<li>I will involve Queuing theory and the Math involved in Queuing theory gets complicated very fast, especially for an average guy like me. What we are going to look at is the most basic form.</li>
+<li>Please be aware that whatever we cover here only allows us to measure the first order approximation of what happens in real life and it is good for use cases like topology design but not for measuring the exact state of a network for operational purposes.</li>
+<li>As usual disclaimer, I am going to take some luxuries while explaining to keep things simple, so it’s possible that some statements may not be mathematically accurate.</li>
+</ul>
+
+<!--more-->
+
+<h2 id="toc_1">Factors contributing to Packet Delay:</h2>
+
+<p>There are typically four factors which contribute to a packet delay in a network. Out of the Four factors, queuing delay is the one which is most interesting and most complicated.</p>
+
+<p>Total Delay = <span style="color: #993300">Processing Delay</span> + <span style="color: #0000ff">Transmission Delay</span> + <span style="color: #008000">Propagation Delay</span> +<span style="color: #ff6600"> <strong>Queuing Delay</strong></span></p>
+
+<p>Queuing delay is the time spent by the packet sitting in a queue waiting to be transmitted onto the link. The amount of time it needs to wait depends on the size of the Queue. If the Queue is empty, then it transmitted immediately, but if it’s sitting behind other packets, then it needs to wait for the packets in front to be transmitted first (common sense).  </p>
+
+<p>In order to understand more about Queueing delay, we have to take a step back and look at the basic of Queuing theory first. Then we will look at the simple Queueing model, derivation and then see how we can use that to calculate the Average Network delay.  </p>
+
+<h2 id="toc_2">What is Queuing Theory?</h2>
+
+<p>Queuing theory is basically the mathematical study of waiting lines. We see Queues everyday in our life, whether it’s a line in Starbucks, queues of vehicles on the road, packets in Data Networks, Grocery line etc.  </p>
+
+<p>Typically, a Queue is formed when people arrive at a place to get some kind of service like getting coffee, grocery, medical help etc. In Queueing theory, we create a model of the Queuing system so that we can predict the performance of the system for parameters like:<br/><br/>
+* Average number of customers waiting in a line (Average Queue length).<br/>
+* Average time a customer spends waiting in a line.<br/>
+* How utilized servers serve the queues.</p>
+
+<p>Queuing theory has been used extensively in Operations Research. As a matter of fact, some of the best lectures I have found on Queuing theory were taught as part of Operations research curriculum.  </p>
+
+<h3 id="toc_3">Components of a Queuing System:</h3>
+
+<p>Below is a representation of various components in a Queueing systems. </p>
+
+<p><img src="media/15255378723707/15255383727178.jpg" alt=""/></p>
+
+<p>At a basic level, a Queuing system consists of one or more Servers serving the customers, One or more Queues in which Customers will come and line-up. The length of these Queues can be assumed infinite or finite length to hold customers waiting for service.  </p>
+
+<ul>
+<li>Arrival Process: Represents the Customer arrival pattern. We will look more into the details.</li>
+<li>Service Pattern: how many servers we have and the speed of the Service which is called Service Rate.</li>
+<li>Queue Length: How many people can a Queuing system hold. 10, 20, 200, infinite?</li>
+<li>Queue Discipline: This represents if the queue will be served in First come First serve (FCFS), Last come First Serve (LCFS), Random etc. manner. Typically, it’s FCFS and that is what we will assume for the rest of the article.</li>
+</ul>
+
+<h3 id="toc_4">Customer Arrival Pattern (Arrival Process)</h3>
+
+<p>Customer arrival pattern basically specifies how customers are arriving in the Queuing system. For instance, they can come either in a scheduled manner or they can be totally random. Few parameters we considered here are:</p>
+
+<ul>
+<li>Arrival Rate: This represents the average rate at which the customers are coming. For instance, let’s say we have a grocery store and we know that on an average, there are 5 customers walks into the store every hour. So the Average rate is 5 customers per hour and it is typically represented by λ(lambda).</li>
+<li>Inter-arrival time: This is the time between the customer arrivals.<br/>
+<img src="media/15255378723707/15255384988084.jpg" alt=""/><br/>
+If we know that the Customers come in a scheduled manner or follow some sort of pattern, then things would be easy. For instance, going back to our grocery store example, let’s say we are trying to figure out how many cash registers we have to put to handle the customers. We know that on an average 5 customers come every hour and let’s assume that it takes on an average 10 mins to service a single customer which means our Service Rate is 6 customers per hour.</li>
+</ul>
+
+<p>Now If 5 customers walk into the store at a gap of 12 mins each, then there won’t be any queue formed because by the time next customer comes, you would have serviced the previous customer and life would be just good with a single counter. But unfortunately life is not that simple, they all can just show up at the same time and that will form a Queue. So If your service time is too long then you have the risk of them walking out.      if they wait for too long, the possibility of them to stop waiting/walk away will be higher.</p>
+
+<p>So, this is the reason why we have built some sort of intuition on why we need to study Queues. Now in our scope, we will assume that Customers arrival pattern is Random in nature.</p>
+
+<p>(Similarly, later we will assume that the packet arrival in Networks is also a Random even though it may not be entirely true in reality).</p>
+
+<p>We will model the customer arrival pattern as a Poisson process. If you don’t know what a Poisson process, I am just going to mention some of the key properties briefly.</p>
+
+<h4 id="toc_5">Poisson Arrival Model:</h4>
+
+<p>A Poisson process is typically used to model scenarios where we are counting the occurrences of certain events that appear to happen at a certain rate, but completely at random. For example, going back to our grocery store example, we know that average customer arrival rate is 5 but we don’t know when they will show up at the store. Poisson process is perfect to model this kind of behavior.<br/>
+<img src="media/15255378723707/15255386155786.jpg" alt=""/><br/>
+In Poisson process the rate “λ” represents the average number of events per unit time. The Probability of “n” arrivals happening in “t” units of time can be given by: \[ P_n(t)=\frac{(\lambda t)^n}{n!}e^{-\lambda t} \]</p>
+
+<p>I am not going to derive the above formula, but essentially it can help you in answering questions like, give me the probability of 8 customers arriving in our grocery shop in an hour given that we know on an average 5 customers per hour(λ=5) walk into the store.</p>
+
+<p>The inter-arrival times of a Poisson process is independent and it follows an <strong>exponential distribution</strong></p>
+
+<p>Again, we are going to skip the proof on how a Poisson process inter arrival times are exponential distribution, but it’s actually pretty simple (though just by saying that may not really help).</p>
+
+<p>Exponential distribution has one key property which is Memoryless. Meaning the past doesn’t affect the Future. It’s also called forgetfulness property and simple examples would be like flipping a Coin. I think I also exhibit symptoms of Memoryless.  </p>
+
+<h2 id="toc_6">Queuing Models Taxonomy:</h2>
+
+<p>So in Queuing theory, we use certain kind of notation (Kendal’s notation) to refer to various types of Queuing system. The format of the notation is below<br/><br/>
+ <strong>A / B / s / K / n / D</strong>  </p>
+
+<ul>
+<li>A – Arrival Process, Inter arrival times distribution. It can be either of these
+
+<ul>
+<li>M = Represents Markovian or Memory less property like Poisson process.</li>
+<li>D = deterministic (Constant)</li>
+<li>G = General distribution</li>
+</ul></li>
+<li>B – Service distribution. It can be either of these
+
+<ul>
+<li>M = Represents Markovian or Memory less property like Exponential service time.</li>
+<li>D = deterministic (Constant)</li>
+<li>G = General distribution</li>
+</ul></li>
+<li>s – number of servers</li>
+<li>K – system’s capacity (e.g. maximum number of customers in the system including the one being served). Typically, we omit this when it’s infinity.</li>
+<li>n – population size. Usually we consider Infinity for this.</li>
+<li>D – Queue Discipline like FIFO, LIFO, Random etc.<br/></li>
+</ul>
+
+<p>For the majority, we only use the first three i.e. “A / B / s” to represent a Queuing system. Below are few Queuing type examples.<br/><br/>
+M/M/1: Infinity<br/><br/>
+<img src="media/15255378723707/15255389466749.jpg" alt=""/>  </p>
+
+<ul>
+<li><strong>Arrival Process</strong>: The First “M” represents memory less property i.e. Poisson arrival process. The customer arrival rate is represented by λ.</li>
+<li><strong>Service Distribution</strong>: The Second “M” represents memory less property i.e. exponential service time. The service rate is represented by “µ” and the mean of Exponential distribution is given by 1/ µ.</li>
+<li><strong>1</strong>: represents the number of server.</li>
+<li><strong>Infinity</strong>: Represents that the Queue length can be infinite. Off course we know that in real world this cannot be true.<br/></li>
+</ul>
+
+<p><strong>M/M/c: 10</strong><br/><br/>
+<img src="media/15255378723707/15255390021410.jpg" alt=""/><br/>
+* <strong>Arrival Process</strong>: “M” represents memory less i.e. Poisson Process<br/>
+* <strong>Service Distribution</strong>: “M” represents memory less i.e. exponential service time<br/>
+* <strong>c</strong>: Represents the number of Servers like 2 in our case.<br/>
+* <strong>10</strong>: Represents the maximum length of the Queue.  </p>
+
+<p>Other examples of Queuing system could be like M/G/1, M/D/1 etc.  </p>
+
+<p>Out of all the different types of Queuing system, M/M/1 is the simplest Queuing model. We can model the output link of a router as an M/M/1 Queue which is actually what we will do later in the example.<br/><br/>
+<img src="media/15255378723707/15255390560022.jpg" alt=""/></p>
+
+<h3 id="toc_7">Properties of a Queuing System:</h3>
+
+<p>At this point we know that in a Queuing system we have Customer Arrival rate (λ) which tells us how fast the customers are coming in and Service rate (µ) which is the average time taken to service each customer. A good Queuing system has a property that service Rate (µ) is always greater than the customer arrival Rate (λ) and the ratio (λ/µ) is represented by “ρ”. </p>
+
+<p>\[\rho = \frac{Customer\ Arrival\ Rate(\lambda)}{Service\ Rate}&lt;1\]</p>
+
+<p>I think the reasoning for this is pretty intuitive because if that is not the case, then the Queue will keep growing as customers will arrive faster than a Queue can be served.  </p>
+
+<p>Obviously the next question comes to mind is why we will have a Queue to begin with if Service Rate is higher than the Customer arrival rate? We should know this because we addressed this in our earlier Grocery example i.e. Customer inter-arrival pattern is random.</p>
+
+<p>In the below figure, we have a service rate of 6 per hour and arrival rate of 5 per hour and we will form Queue for bottom two illustrations where customer arrival pattern is random.<br/><br/>
+<img src="media/15255378723707/15255391356971.jpg" alt=""/></p>
+
+<p>We also make another important assumption that during a very small interval (let’s call it “h”), only one event takes place. Let’s say the current time is “t” then in time “t+h”, either a customer will arrive in the Queue or a Customer is Served. We cannot have both Customer arrival and Customer getting Served in the same time interval “h”. Essentially “h” is so small that only one thing happens (Arrival or Service).  </p>
+
+<p>Alright, so what kind of questions we can answer with the help of Queuing Theory?</p>
+
+<p>Assuming that the system is in a steady state, we can answer things like what is the probability that a system has 0, 1, 2……… to infinity customers, in the Queue? The number of people in the Queue can go either to “Infinity” or to “N” where N is the maximum size a Queue can hold depending on the type of Queuing model we are using like M/M/1: Infinity vs M/M/1: n.</p>
+
+<p>Typically, we are interested in getting the value for below parameters for a given Queueing system.<br/>
+w = numbers of customers waiting is queue<br/><br/>
+q = Total number of customers in the system<br/><br/>
+\(T_s\) = Denote the service time.<br/><br/>
+\(T_w\) = waiting time in Queue <br/>
+\(T_q\) = denote the total turn around time (Waiting time + Service Time) (\(T_q = T_w + T_s\))  </p>
+
+<p><img src="media/15255378723707/15255391737073.jpg" alt=""/>  </p>
+
+<h3 id="toc_8">Basic queuing relationships:</h3>
+
+<p>Little’s Law gives us below two relationships between the parameters for any steady state queuing system:<br/><br/>
+\(q=\lambda T_q\) (equation 1)<br/><br/>
+\(w = \lambda T_w\) (equation 2)  </p>
+
+<p><img src="media/15255378723707/15255392254162.jpg" alt=""/></p>
+
+<p>In case it’s not intuitive to you, think about the basic relationship between Distance, Speed and Time, which we all are familiar with i.e.  </p>
+
+<blockquote>
+<p><strong>Distance = Speed x Time</strong>  </p>
+</blockquote>
+
+<p>The distance covered is a product of the Speed an object is moving and Time spent. Now assume that the arrival rate (λ) is the Speed and the waiting time is the time spend. This will give us the length. We are not going to prove Little’s law, but if you have an interest, the proof is widely available in lots of text books.</p>
+
+<h3 id="toc_9">Relationship between Total Turnaround, Queuing and Service Times</h3>
+
+<p>In a queuing system, a customer’s time is either spent waiting for service or getting service. Thus, we get this relationship:<br/>
+\[T_q = T_w + T_s\]<br/>
+Multiplying the above equation by the arrival rate \(\lambda\) and applying Little&#39;s formula, we get<br/>
+\[\lambda T_q = \lambda T_w + \lambda T_s \]<br/>
+From earlier equation 1 and 2 we know that \(1 = \lambda T/q\) and \(w = \lambda T_w\), so \(q = w+ \lambda T_s\)<br/><br/>
+Where \(T_s=\frac{1}{\mu}\ and\ \rho = \frac{\lambda}{\mu } \)<br/><br/>
+so we see<br/>
+\[q = w+\frac{\lambda}{\mu } \rightarrow w+\rho \]</p>
+
+<h2 id="toc_10">Analysis of an M/M/1 Queuing System</h2>
+
+<p>It’s time for us to derive some equations. An M/M/1 queuing system is a single-queue single-server queuing system in which arrivals are Poisson and service time is exponential. The notation M/M/1 describes the “queue” in the system as having a Markovian arrival process (i.e. Poisson) and a Markovian (i.e. Exponential) service discipline with 1 server.</p>
+
+<h3 id="toc_11">Probability of Arrival and Departure</h3>
+
+<p>So as we said earlier, assume a very small time interval of length “h” and in this time interval (h), only one event happens either an arrival or a departure (customer is serviced).</p>
+
+<p>Since the rate of arrival is λ per unit time, then we can say that rate of arrival per interval “h” is “λh”. To think about this intuitively, let’s say we have an arrival rate of λ = 2 per second and h=5 second then arrival rate per 5 second is 10 (5 x 2).</p>
+
+<p>We know that the probability density of the Poisson distribution is:<br/>
+\(P_n = (\frac{\lambda^n}{n!}e^{- \lambda})\) where n = 0,1,2 ...  </p>
+
+<p>Given that the rate of arrival per interval h is λh, the probability of “n” arrivals per interval h can be given as<br/><br/>
+\(P_n(h) = (\frac{(\lambda h)^n}{n!}e^{- \lambda h})\) where n = 0,1,2 ...  </p>
+
+<p>According to the above, the probability that there will be no arrivals (n=0) during a given interval h is  thus, the probability that at least one arrival (i.e. a birth) will occur is:<br/>
+\[ P(At\ least\  one\ arrival)=1-P(No\ arrivals)\Rightarrow 1-e^{-\lambda h} \Rightarrow 1 - (1- \lambda h + \frac{( \lambda h )^2}{2!}+ \frac{( \lambda h )^3}{3!}) \]</p>
+
+<p>Since we are assuming that “h” is a very small period, we can ignore the higher order terms because they become negligible (intuition: If \(h = 0.001\) then \(h^2 = 0.000001\) which is really small ) which will leave us with  λh.</p>
+
+<p>\[P (arrival) = λh\]</p>
+
+<p>Similarly, we can show that the probability that a customer will leave the system (i.e. a customer for whom the service was finished) given that somebody is in the first position in the system.</p>
+
+<p>\[P (departure) = µh\]</p>
+
+<h3 id="toc_12">State (rate) transition diagram for M/M/1</h3>
+
+<p>Consider a M/M/1 system at steady state (i.e. Equilibrium). Such a system will have a variable number of customers. In particular, at any point of time, a customer may be added to the system through an arrival event, or a customer may be removed from the system due to a departure event.  </p>
+
+<p>Consider the state of the system when exactly &quot;n&quot; customers are in the system. We denote such a state by \(S_n\). If we can figure out how to calculate the generalized probability \(S_n\) that the system will have &quot;n&quot; customers in the Queue. This will allow us to plug any number for n=0,1,2... and get the probability of how many customers are in the Queue.  </p>
+
+<p>Now assume that the system at a given instant is in state \(S_n\). What factors can lead the system to be in such a state \(S_n\) ?  </p>
+
+<p>There are three ways which will result into the system moving into state \(S_n\)<br/>
+1. The system was in the state \(S_{n-1}\) and arrival happened. The probability of that happening is \(\lambda h\). We derived that earlier.<br/>
+2. The system was in the state \(S_{n+1}\) and a departure happened because a customer was serviced. The probability of that happening is \(\mu h\).<br/>
+3. The system was in the state \(S_n\) and neither an arrival nor departure happened. The probability of that happening is \(1-(\lambda h + \mu h)\). (If the probability of arrival or departure happening is \(\lambda h+\mu h\) then not happening is \(1-(\lambda h + \mu h)\)).  </p>
+
+<p><img src="media/15255378723707/15255406029545.jpg" alt=""/></p>
+
+<p>The above diagram shows the transitions. Solid arrows denote the transitions that result into entering state \(S_n\). As you may have noticed that we did not consider the possibility of an arrival and a departure happening in the same interval &quot;h&quot;.</p>
+
+<p>From the above diagram, we can derive the following relationship:</p>
+
+<p>Probability of the system in state \(S_n\) = &quot;Probability that the system is in \(S_{n-1}\) and one arrival happens&quot; or &quot;Probability that the system is in \(S_{n+1}\) and one departure happens&quot; or &quot;Probability that the system is in \(S_{n}\) and no arrival or departure happens&quot;.  </p>
+
+<p>Mathematically we can write the above as<br/><br/>
+\[P(S_n)=\lambda h P(S_{n-1})+\mu h P(S_{n+1})+(1-(\lambda h + \mu h))P(S_n)\]<br/>
+After rearranging terms, we get<br/>
+\[\mu P(S_{n+1}) - \lambda P(S_{n-1})\]<br/>
+\[P(S_{n+1})=(1+\rho)P(S_n)-\rho P(S_{n-1})\ (Dividing \ by\ \mu and substituting\ \frac{\lambda}{\mu}=\rho)\]<br/>
+One thing to note is that for state \(S_0\) i.e. state when there are no customers (n=0) in the Queue is a special state as there is no that \(S_{0-1}\)</p>
+
+<p>With that consideration, we get following from above equations after removing \(S_{0-1}\) and also the fact that if there are 0 people in the Queue then we don&#39;t have to worry about the fact of something getting serviced as there are 0 people in the Queue. therefore,no one will be serviced if there is 0 people in the queue.<br/>
+\[P(S_0)=\mu h P(S_1)+(1-\lambda h)P(S_0)\]<br/>
+\[P(S_0)=\mu h P(S_1)+P(S_0)- \lambda h P(S_0)\]<br/>
+\[\lambda P(S_0) = \mu P(S_1)\]<br/>
+\[P(S_1)=(\frac{\lambda}{\mu})P(S_0) =&gt; \rho P(S_0)\]</p>
+
+<p>Now we have a basic relationship on how state \(S_1\) is dependent on state \(S_0\). Similarly, we can say that <br/>
+\[P(S_2)=\rho P(S_1) =&gt; \rho ^2 P(S_0)\]<br/>
+\[P(S_3)=\rho P(S_2) =&gt; \rho ^2 P(S_0)\]</p>
+
+<p>This can be generalized by saying<br/>
+\[P(S_n) = \rho ^ n P(S_0) \ \ \ \ \  (Equation 4)\]</p>
+
+<p>We see that how every state \(S_n\) can be expressed in terms of basic state \(S_0\). We also know that the overall probability of all the state must be added up to 1, we can say that<br/>
+\[P(S_0)+\rho ^ 1 P(S_0)+\rho ^ 2 P(S_0)+\rho ^ 3 P(S_0)+... = 1\]<br/>
+\[P(S_0)(1+\rho^1+\rho2+\rho^3+...)=1\]</p>
+
+<p>You can see how \((1+\rho^1+\rho2+\rho^3+...)\) is an infinite geometric series from which will get reduced to<br/>
+\[(1+\rho^1+\rho2+\rho^3+...)=\frac{1}{1-\rho} \ \ \ \ (Equation\ 5)\] <br/>
+Applying equation 5, we get<br/>
+\[<br/>
+P(S_0)\frac{1}{1-\rho} = 1 \\<br/>
+P(S_0)=1-\rho \ \ \ \ (Equation\ 6) <br/>
+\]<br/>
+Substituting \(P(S_0)\) results from equation 6 back into equation 4, we get<br/>
+\[<br/>
+P(S_n)= \rho^{n}(1-\rho) \ \ \  \ (Equation\ 7)<br/>
+\]</p>
+
+<h3 id="toc_13">Average number of customer in an M/M/1 System</h3>
+
+<p>Now we are ready to compute the average number of customers in an M/M/1 system. The total number of customers in the system (q) can be given by the sum of the number of customers and their respective probability.<br/><br/>
+\[q=\sum^{n=infinity}_{n=0}{nP(S_n)}\]<br/>
+Applying equation 4 and taking \(\rho P(S_0)\) out<br/>
+\[q=\sum^{n=infinity}_{n=0}{nP(S_n)}\rightarrow \sum^{n=infinity}_{n=0}{n \rho ^ n P(S_0)} \rightarrow \sum^{n=infinity}_{n=0}{n \rho ^ {n-1}}\]<br/>
+We know that from calculus that \(\frac{d}{d\rho}\rho ^ n = n \rho^{n-1} \) and applying sum rule<br/>
+\[<br/>
+q = \rho P(S_0)\sum^{n=infinity}_{n=0}\frac{d}{d\rho}\rho^n \rightarrow \rho P(S_0) \frac{d}{d\rho}\sum^{n=infinity}_{n=0}{\rho^n}<br/>
+\] <br/>
+We know that \(P(S_0) = 1 - \rho \) from equation 6, substituting that for \(P(S_0)\) and equation 5 for geometric series<br/>
+\[<br/>
+q = \rho P(S_0)\frac{d}{d\rho}\frac{1}{1-\rho} \rightarrow \rho(1-\rho)\frac{1}{(1-\rho)^2}<br/>
+\]<br/>
+We know that \(\rho=\frac{\lambda}{\mu}\), substituting that for \(\rho\) we get<br/><br/>
+\(q=\frac{\rho}{1-\rho} \rightarrow \frac{\lambda}{\mu- \lambda}\) (Equation 8)</p>
+
+<h3 id="toc_14">Average number of customers waiting for service in a M/M/1 system</h3>
+
+<p>We know that q = w + ρ. Thus<br/>
+\[W=q-p\rightarrow \frac{\rho}{1-\rho} - \rho \rightarrow \frac{\rho^2}{1-\rho}\]</p>
+
+<h3 id="toc_15">Average time in a M/M/1 system</h3>
+
+<p>Earlier we saw that using Little&#39;S formula  we can say \(q=\lambda T_q\) (Equation 1). Which means<br/>
+\[<br/>
+T_q = q/\lambda \rightarrow \frac{\lambda}{\mu-\lambda} \rightarrow \frac{1}{\mu- \lambda}<br/>
+\]<br/>
+by applying equation 8.<br/><br/>
+So now we have a way to calculate the average time a customer waits in an M/M/1 queuing system with infinite buffer. We could use this to figure out average delay which a packet may experience on a link by Modeling a Router (store and forward) as M/M/1 Queue.</p>
+
+<p>But the next question comes to mind is that in the real world we know that routers don’t have infinite buffers. In that case, if we want we could model Router’s with finite buffer as M/M/1/c Queuing system where  the “c” is the length of the buffers (or Queue size) and derive the equations for getting an average time for an M/M/1/c system.</p>
+
+<p>But before you think “Oh gosh another proof and formula”, it turns out that an Infinite buffer model is a good approximation of finite buffer systems so we will skip that.</p>
+
+<h3 id="toc_16">Networks of M/M/1 Queues:</h3>
+
+<p><img src="media/15255378723707/15255438811801.jpg" alt=""/></p>
+
+<p>Assuming that we are modeling Routers as an M/M/1 Queueing system, we know that every router is connected to each other (like Tandem Queues) where traffic enters multiple queues, exits multiple queues, traffic streams merge or split repeatedly. This fact presents the challenge that once packets have passed the first M/M/1 Queue, are there inter-arrivals still random on the next Queue or they become strongly correlated? Because if they are not random anymore then this will invalidate the Queueing models based on Poisson arrival.</p>
+
+<p>It turns out that a very smart person (Leonard Kleinrock) observed and resolved the problem by introducing the Klein rock independence assumption. It turns out due to the effect of multiple streams merging and splitting at hops, then it restores the Randomness of Inter arrival property, hence making assuming Poisson arrival for packets as a valid assumption.</p>
+
+<p>(Added a video link of him in References which I thought was fascinating. He did his PHD under Claude Shannon)</p>
+
+<h3 id="toc_17">Average Network Delay:</h3>
+
+<p>We can approximate average network delay of a network that consists of more than one link in which traffic feeds from one link into another, by assuming each link behaving as an independent M/M/1 system.  </p>
+
+<p>Consider, for link l=1,2,3...L in a network, the packet arrival rate at link is given by \(\lambda _ l\) which will is expressed in terms of packets per seconds(PPS). Assuming the link capacity is \(c_l\), we can find the service rate \(\mu_l\) for that link by \(\mu_l=\frac{c_l}{average\ packet\ size}\).</p>
+
+<p>For example, if the link is 1Mbps(1,000,000bps) and average packet size is 500bytes(4,000bits), this gives us the service rate \(\mu_l = \frac{1Mbps}{500bytes}=250pps\)</p>
+
+<p>Also assume that on that 1Mbps link we have 800kbps of traffic then we can say the arrival rate on that link \(\mu_l = \frac{Bandwidth}{average\ packet\ size}=\frac{800,000}{4,000}=200pps\)</p>
+
+<p>So we can derive the average number of packets \(N_l=\frac{\lambda_l}{\mu_l - \lambda_l}\) in a queue (equation 8).</p>
+
+<p>If we sum the average number of packets for all links, we get the average number of packets in the network.<br/>
+\[<br/>
+N=\sum^{L}_{l=1}{N_l}=\sum^{L}_{l=1}{\frac{\lambda_l}{\mu_l- \lambda_l}}<br/>
+\]</p>
+
+<p>Now if we know the total amount of the traffic or demand entering into the network, then let&#39;s call it H then by applying Little&#39;s law over the network we can say that \(N=HT\) (From equation 1).</p>
+
+<p>This give us<br/>
+\[<br/>
+T=\frac{N}{H}=(\frac{1}{h}\sum^{L}_{l=1}{\frac{\lambda_l}{\mu_l- \lambda_l}})<br/>
+\]</p>
+
+<h3 id="toc_18">Example:</h3>
+
+<p>Now let’s try to apply what all we have learned so far with an example. Assume that we have this network topology.</p>
+
+<p><img src="media/15255378723707/15255445537342.jpg" alt=""/></p>
+
+<p>All links are of 1 Gbps capacity for simplicity. In reality we can have a capacity matrix giving us the capacity of each link. We assume that the average packet size in this network is 600 Bytes (4800 bits).  </p>
+
+<p>We can derive the service rate for a link = \(\frac{Link\ capacity}{Avg\ Packet\ Size}=\frac{1,000,000,000}{4,800}=208,333 pps\)</p>
+
+<p>In our case this will be the Service Rate for every link as we are assuming same link capacity and average packet size. We also have the below Routing matrix for this topology which tells us how traffic is routed between the Nodes.</p>
+
+<p><strong>Routing Matrix:</strong>  </p>
+
+<p><img src="media/15255378723707/15255446516674.jpg" alt=""/></p>
+
+<p>We can look at the Routing Matrix and the Traffic Demand Matrix of the network to derive the aggregate demand for each link in the network. For Instance, from Routing matrix we know that the link “AB” will carry traffic for the demands for “AB”, “ABC”, “ABF” and “ABFD”.</p>
+
+<p>Let’s say we had a Traffic Demand matrix and after combining with the Routing matrix, we came up with the below Aggregate Traffic Demand matrix for the links, this gives us the Arrival rate for each link.</p>
+
+<p><strong>Aggregate Traffic in PPS(Mbps) derived from Routing table.</strong><br/><br/>
+<img src="media/15255378723707/15255446847256.jpg" alt=""/><br/>
+Total Arrival Rate is equal to the sum of the arrival rate on all the links which we get from the above table<br/><br/>
+\[\sum{\lambda_l} = 2,500,000\ pps\]<br/>
+To keep it simple, The below table shows the calculations only in one way like from Link A-&gt;B but not from B-&gt;A. Later we will just double the final numbers to account for the other direction.<br/><br/>
+<img src="media/15255378723707/15255447347725.jpg" alt=""/></p>
+
+<p>Average Network Delay where total Arrival Rate in the Network \(H=2,500,000pps\)<br/>
+\[T(Average\ Delay)=(\frac{1}{H})\sum^{L}{l=1}{\frac{\lambda_l}{\mu_l- \lambda_l}}=\frac{1}{2,500,000}\sum^{L}{l=1}{\frac{39 \times 2 }{2,500,000}}=31.2\mu\ sec\]</p>
+
+<h2 id="toc_19">Conclusion:</h2>
+
+<p>We started with the basic of Queuing theory, then we derived some equations for the key parameters for the M/M/1 Queueing system. Then we looked at how the M/M/1 Queuing system can be applied to Network and ended with an example.</p>
+
+<p>We could have just looked at the final formula without going through the derivation, but my goal is to show how it’s derived because that is always not stated clearly in books.It also helps in building an understanding of the assumptions behind derived equations. Once you have developed an understanding/intuition, I do not think you have to remember the details. I hope some of you will find this useful.  </p>
+
+<p>I was initially thinking of covering below questions but decided to leave it to you:</p>
+
+<ul>
+<li>Whether Poisson traffic is the right model for traffic arrival?</li>
+<li>Is M/M/1 Queuing system the right way to model the Routers? Or we should have looked at some Queuing systems like M/G/1 where service rate distribution is modeled as a generalized distribution?
+
+<ul>
+<li>If yes, then how can we find an average network delay in those cases.</li>
+</ul></li>
+</ul>
+
+<h2 id="toc_20">Useful links and References:</h2>
+
+<ul>
+<li>Khan Academy Poisson Process Introduction
+<ul>
+<li><a href="https://www.youtube.com/watch?v=3z-M6sbGIZ0">https://www.youtube.com/watch?v=3z-M6sbGIZ0</a></li>
+<li><a href="https://www.youtube.com/watch?v=Jkr4FSrNEVY">https://www.youtube.com/watch?v=Jkr4FSrNEVY</a></li>
+</ul>
+</li>
+<li><a href="https://www.youtube.com/playlist?list=PL7A02833F8478FF87">Advanced Operations Research by Prof. G.Srinivasan</a></li>
+<li>Exponential Process Introduction <a href="https://www.youtube.com/watch?v=bKkLYSi5XNE">https://www.youtube.com/watch?v=bKkLYSi5XNE</a></li>
+<li>Queuing and Loss Simulation: <a href="http://www.ccs-labs.org/teaching/rn/animations/queue/">http://www.ccs-labs.org/teaching/rn/animations/queue/</a></li>
+<li>Leonard Kleinrock: <a href="https://www.youtube.com/watch?v=qsgrtrwydjw">https://www.youtube.com/watch?v=qsgrtrwydjw</a></li>
+<li><a href="https://www.amazon.com/Network-Routing-Second-Algorithms-Architectures/dp/0128007370">Network Routing, Second Edition: Algorithms, Protocols, and Architectures (The Morgan Kaufmann Series in Networking)</a></li>
+<li><a href="https://www.amazon.com/High-Performance-Data-Network-Design/dp/1555582079">High Performance Data Network Design: Design Techniques and Tools</a></li>
+<li><a href="https://www.amazon.com/Queueing-Modelling-Fundamentals-Applications-Communication/dp/0470519576">Queueing Modelling Fundamentals: With Applications in Communication Networks</a></li>
+</ul>
+
+
+    
+
+      </div>
+
+      <div class="row">
+        <div class="large-6 columns">
+        <p class="text-left" style="padding:15px 0px;">
+      
+        </p>
+        </div>
+        <div class="large-6 columns">
+      <p class="text-right" style="padding:15px 0px;">
+      
+          <a  href="Anime%20Review:%20High%20School%20Fleet.html" 
+          title="Next Post: Review: High School Fleet">Review: High School Fleet &raquo;</a>
+      
+      </p>
+        </div>
+      </div>
+      <div class="comments-wrap">
+        <div class="share-comments">
+          <div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://hampus-blog.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+                            
+
+          
+
+          
+        </div>
+      </div>
+    </div><!-- article-wrap -->
+  </div><!-- large 8 -->
+
+
+
+
+ <div class="large-4 medium-4 columns">
+  <div class="hide-for-small">
+    <div id="sidebar" class="sidebar">
+          <div id="site-info" class="site-info">
+            
+                <div class="site-a-logo"><img src="https://fuuko.net/avatar.jpg" /></div>
+            
+                <h1>Fuuko's Lab</h1>
+                <div class="site-des">Free is never free.</div>
+                <div class="social">
+
+
+
+
+
+
+
+
+<a target="_blank" class="twitter" target="_blank" href="https://twitter.com/realFuuko" title="Twitter">Twitter</a>
+
+<a target="_blank" class="email" href="mailto:hampus[@]back.re" title="Email">Email</a>
+  <a target="_blank" class="rss" href="atom.xml" title="RSS">RSS</a>
+                
+              	 </div>
+          	</div>
+
+             
+
+              <div id="site-categories" class="side-item ">
+                <div class="side-header">
+                  <h2>Categories</h2>
+                </div>
+                <div class="side-content">
+
+      	<p class="cat-list">
+        
+            <a href="Material.html"><strong>Material</strong></a>
+        
+            <a href="Network.html"><strong>Network</strong></a>
+        
+            <a href="Offtopics.html"><strong>Offtopics</strong></a>
+        
+            <a href="Review.html"><strong>Review</strong></a>
+         
+        </p>
+
+
+                </div>
+              </div>
+
+              <div id="site-categories" class="side-item">
+                <div class="side-header">
+                  <h2>Recent Posts</h2>
+                </div>
+                <div class="side-content">
+                <ul class="posts-list">
+	      
+		      
+			      <li class="post">
+			        <a href="15255378723707.html">AND (Average Network Delay) and Queuing Theory Basics</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="Anime%20Review:%20High%20School%20Fleet.html">Review: High School Fleet</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15171319125987.html">Wipe Out Aliyun Server Guard Agent</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15147262575972.html">Difference between OpenVZ and LXC</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
+			        <a href="15139994534279.html">BitTorrent Traffic Detection with Deep Flow Inspection</a>
+			      </li>
+		     
+		  
+		      
+		  
+		      
+		  
+		      
+		  
+		      
+		  
+		      
+		  
+		      
+		  
+		      
+		  
+		      
+		   
+		  		</ul>
+                </div>
+              </div>
+        </div><!-- sidebar -->
+      </div><!-- hide for small -->
+</div><!-- large 4 -->
+
+</div><!-- row -->
+
+ <div class="page-bottom clearfix">
+  <div class="row">
+   <p class="copyright">Copyright &copy; 2017
+Hosted by <a target="_blank" href="https://aws.amazon.com">Amazon Web Service</a> 
+  </div>
+</div>
+
+        </section>
+      </div>
+    </div>
+
+  
+    
+
+    <script src="asset/js/foundation.min.js"></script>
+    <script>
+      $(document).foundation();
+      function fixSidebarHeight(){
+        var w1 = $('.markdown-body').height();
+          var w2 = $('#sidebar').height();
+          if (w1 > w2) { $('#sidebar').height(w1); };
+      }
+      $(function(){
+        fixSidebarHeight();
+      })
+      $(window).load(function(){
+          fixSidebarHeight();
+      });
+     
+    </script>
+
+    <script src="asset/chart/all-min.js"></script><script type="text/javascript">$(function(){    var mwebii=0;    var mwebChartEleId = 'mweb-chart-ele-';    $('pre>code').each(function(){        mwebii++;        var eleiid = mwebChartEleId+mwebii;        if($(this).hasClass('language-sequence')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = Diagram.parse($(this).text());            diagram.drawSVG(eleiid,{theme: 'simple'});        }else if($(this).hasClass('language-flow')){            var ele = $(this).addClass('nohighlight').parent();            $('<div id="'+eleiid+'"></div>').insertAfter(ele);            ele.hide();            var diagram = flowchart.parse($(this).text());            diagram.drawSVG(eleiid);        }    });});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({TeX: { equationNumbers: { autoNumber: "AMS" } }});</script>
+
+
+  </body>
+</html>
