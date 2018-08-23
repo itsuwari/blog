@@ -118,6 +118,87 @@
 		<div class="markdown-body home-categories">
 		
 			<div class="article">
+                <a class="clearlink" href="15171319125987.html">
+                
+                  <h1>Wipe Out Aliyun Server Guard Agent</h1>
+                  <div class="a-content">
+                      
+                      <div class="a-content-text">
+                        
+                        	<h2 id="toc_0">Why NOT simply do reinstall via panel?</h2>
+
+<p>Server Guard Agent (SGA) is installed by default and Aliyun has an <a href="https://www.alibabacloud.com/help/doc-detail/31777.htm?spm=a3c0i.o31778en.b99.10.11511e0bKvNdEk">official uninstall guide</a>.</p>
+
+<p>However, after uninstalling SGA, your VM still <a href="https://fuuko.net/15147462575972.html">trying connecting SGA remote and uploading encrypted data</a>.  </p>
+
+<p>After blocked all IPs of SGA service, <a href="https://fuuko.net/15147362575182.html">an unknown key inserted in my .ssh/ directory</a>. I opened a ticket, they told me &quot;you were hacked&quot;. And I found <a href="https://fuuko.net/15147672575905.html">my sshd binary file was modified</a>.  </p>
+
+<p>So we will enable full system encryption to make VMs hosted by a provider which cannot be trusted invulnerable.</p>
+
+<h2 id="toc_1">Prepare your VM</h2>
+
+<p>You’ll install your custom distro onto a raw disk, with the direct disk boot option. The end result will be a working custom install; however, it will not support disk resizing from within the official panel, nor will it be compatible with the official backup service.<br/><br/>
+1. Create two raw, unformatted disk images. Can be done with Aliyun Console.<br/>
+2. Create two configuration profiles.</p>
+
+<p>Installer profile</p>
+
+<pre><code>Label: Installer
+Kernel: Direct Disk
+/dev/sda: Boot disk image.
+/dev/sdb: Installer disk image.
+root / boot device: Standard /dev/sdb
+</code></pre>
+
+<p>Boot profile</p>
+
+<pre><code>Label: Boot
+Kernel: Direct Disk
+/dev/sda: Boot disk image.
+root / boot device: Standard /dev/sda
+</code></pre>
+
+<h2 id="toc_2">Download and Install Image</h2>
+
+<ol>
+<li>Boot into Rescue Mode with your Installer disk mounted to /dev/sda, and connect to your VM using the Aliyun Console.</li>
+<li>Once in Rescue Mode, download your installation media and copy it to your Installer disk. In this example we’re using the Ubuntu net installer.</li>
+</ol>
+
+<pre><code class="language-bash">wget http://mirror.pnl.gov/releases/xenial/ubuntu-16.04.3-server-amd64.iso
+dd if=mini.iso of=/dev/sda
+</code></pre>
+
+<ol>
+<li>Reboot into your Installer configuration profile</li>
+<li>During your installer’s partitioning/installation phase, be sure to instruct it to use the /dev/sda volume and <strong>enable full system encryption</strong>.</li>
+<li>Once the installation completes, reboot into your Boot profile and open the console. You will have access to your VM.</li>
+</ol>
+
+                        
+                      </div>
+                  </div>
+                </a>
+                <div class="read-more clearfix">
+                  <div class="more-left left">
+                  
+                    <span class="date">2018/1/11</span>
+                    <span>posted in&nbsp;</span> 
+          				  
+          					    <span class="posted-in"><a href='Network.html'>Network</a></span>
+          				   
+                  </div>
+                  <div class="more-right right">
+                  <span class="comments">
+                      
+
+                       
+                  </span>
+                  </div>
+                </div>
+              </div><!-- article -->
+        
+			<div class="article">
                 <a class="clearlink" href="15147262575972.html">
                 
                   <h1>Difference between OpenVZ and LXC</h1>
@@ -303,182 +384,6 @@ Figure 2 shows the classifier accuracy with increasing number of BT packet flows
                 </div>
               </div><!-- article -->
         
-			<div class="article">
-                <a class="clearlink" href="15136684903532.html">
-                
-                  <h1>Free Alternatives to Gaussian</h1>
-                  <div class="a-content">
-                      
-                      <div class="a-content-text">
-                        
-                        	<p>&#39;Free software&#39; here not means &#39;libre software&#39;.  </p>
-
-<h1 id="toc_0">1. <a href="http://www.gromacs.org/">GAMESS</a></h1>
-
-<p>Most similar to Gaussian, and code is really clean and easy to read, even have <a href="http://www.gromacs.org/Developer_Zone">documents</a> for developers.    </p>
-
-<table>
-<thead>
-<tr>
-<th>Opensource</th>
-<th>License</th>
-</tr>
-</thead>
-
-<tbody>
-<tr>
-<td>Yes</td>
-<td>BSD</td>
-</tr>
-</tbody>
-</table>
-
-<h1 id="toc_1">2. <a href="http://www.psicode.org/">PSI</a></h1>
-
-<p>An Open-Source electronic structure program emphasizing automation, advanced libraries, and interoperability.  </p>
-
-<table>
-<thead>
-<tr>
-<th>Opensource</th>
-<th>License</th>
-</tr>
-</thead>
-
-<tbody>
-<tr>
-<td>Yes</td>
-<td>GNUv3</td>
-</tr>
-</tbody>
-</table>
-
-<h1 id="toc_2">3. <a href="http://lammps.sandia.gov/">LAMMPS</a></h1>
-
-<p>Has potentials for solid-state materials (metals, semiconductors) and soft matter (biomolecules, polymers) and coarse-grained or mesoscopic systems. It can be used to model atoms or, more generically, as a parallel particle simulator at the atomic, meso, or continuum scale.     </p>
-
-<table>
-<thead>
-<tr>
-<th>Opensource</th>
-<th>License</th>
-</tr>
-</thead>
-
-<tbody>
-<tr>
-<td>Yes</td>
-<td>GPLv3</td>
-</tr>
-</tbody>
-</table>
-
-<!--more-->
-
-<h1 id="toc_3">4. <a href="https://ccpforge.cse.rl.ac.uk/gf/project/castep/">CASTEP</a></h1>
-
-<p>Specializes in periodic systems with plane wave basis sets.    </p>
-
-<table>
-<thead>
-<tr>
-<th>Opensource</th>
-<th>License</th>
-</tr>
-</thead>
-
-<tbody>
-<tr>
-<td>No</td>
-<td>commercial</td>
-</tr>
-</tbody>
-</table>
-
-<h1 id="toc_4">5. <a href="http://www.qtp.ufl.edu/ACES/">ACES</a></h1>
-
-<table>
-<thead>
-<tr>
-<th>Opensource</th>
-<th>License</th>
-</tr>
-</thead>
-
-<tbody>
-<tr>
-<td>Yes</td>
-<td>GPLv3</td>
-</tr>
-</tbody>
-</table>
-
-<p>Specializes in high level quantum chemistry calculations.<br/><br/>
-Taken the best features of parallel implementations of quantum chemistry methods for electronic structure.  </p>
-
-<h1 id="toc_5">6.<a href="http://www.diracprogram.org/doku.php">DIRAC</a></h1>
-
-<table>
-<thead>
-<tr>
-<th>Opensource</th>
-<th>License</th>
-</tr>
-</thead>
-
-<tbody>
-<tr>
-<td>No</td>
-<td>Unknown</td>
-</tr>
-</tbody>
-</table>
-
-<p>Oriented towards relativistic quantum chemistry problems.</p>
-
-<h1 id="toc_6">7. <a href="http://www.nwchem-sw.org/index.php/Main_Page">NWChem</a></h1>
-
-<table>
-<thead>
-<tr>
-<th>Opensource</th>
-<th>License</th>
-</tr>
-</thead>
-
-<tbody>
-<tr>
-<td>Yes</td>
-<td><a href="https://en.wikipedia.org/wiki/Educational_Community_License">ECL</a></td>
-</tr>
-</tbody>
-</table>
-
-<p>Can calculate a smaller set of properties but it can handle mixed QM/MM calculations and periodic systems like solids.</p>
-
-                        
-                      </div>
-                  </div>
-                </a>
-                <div class="read-more clearfix">
-                  <div class="more-left left">
-                  
-                    <span class="date">2017/11/11</span>
-                    <span>posted in&nbsp;</span> 
-          				  
-          					    <span class="posted-in"><a href='Material.html'>Material</a></span>
-          				   
-                  </div>
-                  <div class="more-right right">
-                  <span class="comments">
-                      
-
-                       
-                  </span>
-                  </div>
-                </div>
-              </div><!-- article -->
-        
               
 
 
@@ -556,6 +461,12 @@ Taken the best features of parallel implementations of quantum chemistry methods
 	      
 		      
 			      <li class="post">
+			        <a href="15350073940996.html">Introduction to EXPLOSION MAGIC!</a>
+			      </li>
+		     
+		  
+		      
+			      <li class="post">
 			        <a href="Review-Toradora(%E3%81%A8%E3%82%89%E3%83%89%E3%83%A9!)%20-%20the%20Best%20Romantic%20Comedy.html">Review: Toradora(とらドラ!) - the Best Romantic Comedy</a>
 			      </li>
 		     
@@ -579,10 +490,6 @@ Taken the best features of parallel implementations of quantum chemistry methods
 		     
 		  
 		      
-			      <li class="post">
-			        <a href="15147262575972.html">Difference between OpenVZ and LXC</a>
-			      </li>
-		     
 		  
 		      
 		  
